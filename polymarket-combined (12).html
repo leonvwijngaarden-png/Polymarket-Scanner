@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Scanner">
+<meta name="theme-color" content="#080b12">
+<title>PM Scanner</title>
+<script>
+(function(){
+  const m={name:"PM Scanner",short_name:"PM Scanner",display:"standalone",background_color:"#080b12",theme_color:"#080b12",start_url:"./",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23080b12'/%3E%3Ctext x='96' y='125' font-family='system-ui' font-size='68' font-weight='700' fill='%2300ff88' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"}]};
+  const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'}));document.head.appendChild(l);
+})();
+</script>
+<style>
+:root{
+  --bg:#080b12;--bg2:#0d1117;--bg3:#131920;--bg4:#1a2230;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8edf4;--text2:#6b7d93;--text3:#3d4f62;
+  --green:#00ff88;--green-bg:rgba(0,255,136,0.1);--green-border:rgba(0,255,136,0.25);
+  --red:#ff4466;--red-bg:rgba(255,68,102,0.1);--red-border:rgba(255,68,102,0.25);
+  --amber:#ffb340;--amber-bg:rgba(255,179,64,0.1);--amber-border:rgba(255,179,64,0.3);
+  --blue:#4d9fff;--blue-bg:rgba(77,159,255,0.1);--blue-border:rgba(77,159,255,0.25);
+  --purple:#b36bff;--purple-bg:rgba(179,107,255,0.1);--purple-border:rgba(179,107,255,0.3);
+  --sky:#38bdf8;--sky-bg:rgba(56,189,248,0.1);--sky-border:rgba(56,189,248,0.25);
+  --sun:#fbbf24;--sun-bg:rgba(251,191,36,0.1);--sun-border:rgba(251,191,36,0.25);
+  --rain:#60a5fa;--rain-bg:rgba(96,165,250,0.1);--rain-border:rgba(96,165,250,0.25);
+  --r:11px;--rs:7px;--mono:'SF Mono','Fira Code',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px 11px;border-bottom:0.5px solid var(--border);flex-shrink:0;padding-top:max(13px,env(safe-area-inset-top))}
+.hdr-left{display:flex;align-items:center;gap:9px}
+.logo{width:30px;height:30px;border-radius:7px;background:var(--green-bg);border:0.5px solid var(--green-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green)}
+.app-name{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-0.3px}
+.app-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.status-pill{display:flex;align-items:center;gap:5px;font-size:10px;padding:3px 9px;border-radius:20px;background:var(--bg3);border:0.5px solid var(--border);color:var(--text3);font-family:var(--mono)}
+.status-pill.running{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.status-pill.wx{background:var(--sky-bg);border-color:var(--sky-border);color:var(--sky)}
+.sdot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.status-pill.running .sdot,.status-pill.wx .sdot{animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+
+/* Tabs - scrollable to fit all 5 */
+.tabs{display:flex;border-bottom:0.5px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:10px 14px;font-size:11px;color:var(--text3);text-align:center;cursor:pointer;border-bottom:1.5px solid transparent;transition:all 0.15s;position:relative;white-space:nowrap}
+.tab.active{color:var(--text);border-bottom-color:var(--green)}
+.tbadge{position:absolute;top:6px;right:4px;background:var(--amber);color:#000;font-size:8px;font-weight:800;padding:1px 4px;border-radius:8px;display:none}
+
+/* Panels */
+.panels{flex:1;overflow:hidden}
+.panel{display:none;height:100%;overflow-y:auto;padding:12px 16px;padding-bottom:max(74px,calc(58px + env(safe-area-inset-bottom)))}
+.panel.active{display:block}
+.panel::-webkit-scrollbar{width:2px}
+.panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Nav */
+.nav{display:flex;border-top:0.5px solid var(--border);flex-shrink:0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:9px;color:var(--text3);cursor:pointer;border:none;background:none;transition:color 0.15s;text-transform:uppercase;letter-spacing:0.03em}
+.nb.active{color:var(--green)}
+.nb svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Shared stat bar */
+.sbar-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.sbar{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:9px 11px}
+.sbar-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em}
+.sbar-v{font-size:19px;font-weight:700;margin-top:2px;font-family:var(--mono)}
+.cv-g{color:var(--green)} .cv-a{color:var(--amber)} .cv-b{color:var(--blue)} .cv-s{color:var(--sky)}
+
+/* Section label */
+.sec{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+
+/* ── Market signal cards ── */
+.signal-list{display:flex;flex-direction:column;gap:8px}
+.sig{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.sig.e-arb{border-left:2px solid var(--green)}
+.sig.e-low{border-left:2px solid var(--amber)}
+.sig.e-long{border-left:2px solid var(--purple)}
+.sig.e-mom{border-left:2px solid var(--blue)}
+
+.sig-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:10px 12px 0}
+.sig-title{font-size:12px;font-weight:500;color:var(--text);line-height:1.4;flex:1}
+.sig-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
+.b-arb{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.b-low{background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--amber-border)}
+.b-long{background:var(--purple-bg);color:var(--purple);border:0.5px solid var(--purple-border)}
+.b-mom{background:var(--blue-bg);color:var(--blue);border:0.5px solid var(--blue-border)}
+
+.sig-metrics{display:flex;padding:8px 12px}
+.sm{flex:1;border-right:0.5px solid var(--border);padding-right:8px;margin-right:8px}
+.sm:last-child{border-right:none;padding-right:0;margin-right:0}
+.sm-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em}
+.sm-v{font-size:13px;font-weight:600;font-family:var(--mono);margin-top:1px}
+
+.sig-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:0.5px solid var(--border);background:var(--bg3)}
+.sf-reason{font-size:10px;color:var(--text2);line-height:1.4;flex:1}
+.sf-act{font-size:10px;font-weight:600;padding:4px 9px;border-radius:5px;text-decoration:none;white-space:nowrap;margin-left:8px}
+.act-yes{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.act-no{background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border)}
+.act-watch{background:var(--blue-bg);color:var(--blue);border:0.5px solid var(--blue-border)}
+
+/* Filter pills */
+.filter-row{display:flex;flex-wrap:wrap;gap:5px}
+.fpill{font-size:10px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;background:var(--bg3);white-space:nowrap;transition:all 0.15s}
+.fpill.on{border-color:var(--green-border);color:var(--green);background:var(--green-bg)}
+
+/* ── Weather opp cards ── */
+.opp-list{display:flex;flex-direction:column;gap:8px}
+.ocard{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ocard.edge-temp{border-left:2px solid var(--sun)}
+.ocard.edge-rain{border-left:2px solid var(--rain)}
+.oc-head{padding:10px 12px 0}
+.oc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px}
+.oc-city{font-size:13px;font-weight:600;color:var(--text)}
+.oc-market{font-size:11px;color:var(--text2);margin-top:1px;line-height:1.3}
+.oc-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em}
+.badge-temp{background:var(--sun-bg);color:var(--sun);border:0.5px solid var(--sun-border)}
+.badge-rain{background:var(--rain-bg);color:var(--rain);border:0.5px solid var(--rain-border)}
+.oc-compare{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 12px 10px}
+.oc-side{background:var(--bg3);border-radius:6px;padding:8px 10px}
+.oc-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+.oc-val{font-size:20px;font-weight:700;font-family:var(--mono)}
+.oc-sub{font-size:10px;color:var(--text2);margin-top:1px}
+.oc-side.fc .oc-val{color:var(--sky)}
+.oc-side.mk .oc-val{color:var(--sun)}
+.oc-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:0.5px solid var(--border);background:var(--bg3)}
+.oc-edge{font-size:11px;font-weight:600}
+.oc-edge.pos{color:var(--green)} .oc-edge.neg{color:var(--red)}
+.oc-reason{font-size:10px;color:var(--text2);flex:1;margin:0 8px;line-height:1.3}
+.oc-link{font-size:10px;font-weight:600;color:var(--sky);text-decoration:none;white-space:nowrap;padding:4px 8px;border:0.5px solid var(--sky-border);border-radius:5px;background:var(--sky-bg)}
+
+/* ── City cards ── */
+.city-list{display:flex;flex-direction:column;gap:8px}
+.city-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.cc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.cc-name{font-size:13px;font-weight:600;color:var(--text)}
+.cc-country{font-size:10px;color:var(--text3);margin-top:1px}
+.cc-right{text-align:right}
+.cc-emoji{font-size:22px}
+.cc-temp{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--sun)}
+.cc-feels{font-size:10px;color:var(--text2)}
+.cc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)}
+.ccm-l{font-size:9px;color:var(--text3)}
+.ccm-v{font-size:12px;font-weight:500;color:var(--text);margin-top:2px}
+.cc-fc{display:flex;gap:5px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.fc-day{flex-shrink:0;text-align:center;padding:5px 7px;background:var(--bg3);border-radius:6px;min-width:42px}
+.fc-lbl{font-size:9px;color:var(--text3)}
+.fc-ico{font-size:12px;margin:2px 0}
+.fc-hi{font-size:11px;font-weight:600;color:var(--sun)}
+.fc-lo{font-size:10px;color:var(--sky)}
+
+/* ── Scanner blocks ── */
+.scan-block{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px}
+.scan-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.scan-title{font-size:12px;font-weight:600;color:var(--text)}
+.scan-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.run-btn{font-size:11px;font-weight:600;padding:7px 13px;border-radius:6px;border:0.5px solid var(--green-border);background:var(--green-bg);color:var(--green);cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.run-btn:disabled{opacity:0.4;cursor:not-allowed}
+.run-btn.wx{border-color:var(--sky-border);background:var(--sky-bg);color:var(--sky)}
+
+.prog-wrap{display:none;margin-bottom:8px}
+.prog-bg{background:var(--bg4);border-radius:3px;height:3px;overflow:hidden;margin-bottom:5px}
+.prog-fill{height:100%;border-radius:3px;transition:width 0.4s;width:0%}
+.prog-fill.green{background:var(--green)}
+.prog-fill.sky{background:var(--sky)}
+.prog-txt{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+.city-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{font-size:10px;padding:4px 9px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;background:var(--bg3);white-space:nowrap}
+.chip.on{border-color:var(--sky-border);color:var(--sky);background:var(--sky-bg)}
+
+/* ── Edge guide (from research bot) ── */
+.legend{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.leg-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:var(--rs);background:var(--bg2);border:0.5px solid var(--border)}
+.leg-dot{width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:16px}
+.leg-dot.g{background:var(--green)} .leg-dot.a{background:var(--amber)}
+.leg-dot.p{background:var(--purple)} .leg-dot.b{background:var(--blue)}
+.leg-dot.s{background:var(--sky)} .leg-dot.r{background:var(--rain)}
+.leg-name{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px}
+.leg-desc{font-size:10px;color:var(--text2);line-height:1.5}
+.guide-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:11px 13px;margin-bottom:7px}
+.guide-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px}
+.guide-body{font-size:11px;color:var(--text2);line-height:1.6}
+
+/* ── Settings ── */
+.scard{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px}
+.scard-t{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.field{margin-bottom:9px}
+.flbl{font-size:10px;color:var(--text3);margin-bottom:4px}
+.fin{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--rs);padding:8px 10px;color:var(--text);font-size:11px;font-family:var(--mono);outline:none}
+.fin:focus{border-color:var(--green-border)}
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:0.5px solid var(--border)}
+.tog-lbl{font-size:11px;color:var(--text2)}
+.tog{width:36px;height:20px;border-radius:10px;background:var(--bg4);border:0.5px solid var(--border2);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.tog.on{background:var(--green);border-color:var(--green)}
+.tog-k{width:14px;height:14px;border-radius:7px;background:white;position:absolute;top:2px;left:2px;transition:left 0.2s}
+.tog.on .tog-k{left:18px}
+.save-btn{width:100%;margin-top:11px;padding:9px;border-radius:var(--rs);border:0.5px solid var(--green-border);background:var(--green-bg);color:var(--green);font-size:12px;font-weight:600;cursor:pointer}
+.notice-box{font-size:10px;color:var(--text3);line-height:1.6;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs)}
+
+/* Misc */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:26px;margin-bottom:8px;opacity:0.3}
+.empty p{font-size:11px;line-height:1.6}
+.spin{animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(68px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg4);border:0.5px solid var(--border2);border-radius:16px;padding:6px 14px;font-size:11px;color:var(--text);opacity:0;transition:all 0.2s;pointer-events:none;white-space:nowrap;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Install banner */
+.ibanner{display:none;align-items:center;gap:10px;padding:9px 16px;background:var(--bg3);border-bottom:0.5px solid var(--green-border);flex-shrink:0}
+.ibanner.show{display:flex}
+.ib-txt{font-size:11px;color:var(--text2);flex:1}
+.ib-txt strong{color:var(--text);font-weight:500;display:block}
+.ib-yes{font-size:11px;padding:5px 11px;border-radius:6px;border:0.5px solid var(--green-border);background:var(--green-bg);color:var(--green);cursor:pointer;white-space:nowrap}
+.ib-no{font-size:11px;padding:5px 8px;border:none;background:none;color:var(--text3);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="logo">PM</div>
+      <div>
+        <div class="app-name">PM Scanner</div>
+        <div class="app-sub">Edge · Weather · Guide</div>
+      </div>
+    </div>
+    <div class="status-pill" id="status-pill">
+      <div class="sdot"></div><span id="status-txt">ready</span>
+    </div>
+  </div>
+
+  <div class="ibanner" id="ibanner">
+    <div class="ib-txt"><strong>Add to home screen</strong>Open like a real app</div>
+    <button class="ib-yes" id="ib-yes">Install</button>
+    <button class="ib-no" id="ib-no">✕</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="goTab('signals')">Signals<span class="tbadge" id="sig-badge">0</span></div>
+    <div class="tab" onclick="goTab('weather')">Weather<span class="tbadge" id="wx-badge">0</span></div>
+    <div class="tab" onclick="goTab('cities')">Forecasts</div>
+    <div class="tab" onclick="goTab('scanner')">Scanner</div>
+    <div class="tab" onclick="goTab('guide')">Guide</div>
+    <div class="tab" onclick="goTab('settings')">Settings</div>
+  </div>
+
+  <div class="panels">
+
+    <!-- SIGNALS -->
+    <div class="panel active" id="p-signals">
+      <div class="sbar-row">
+        <div class="sbar"><div class="sbar-l">Signals</div><div class="sbar-v cv-g" id="st-total">0</div></div>
+        <div class="sbar"><div class="sbar-l">Best edge</div><div class="sbar-v cv-a" id="st-edge">—</div></div>
+        <div class="sbar"><div class="sbar-l">Last scan</div><div class="sbar-v cv-b" style="font-size:12px" id="st-time">—</div></div>
+      </div>
+      <div class="sec">Market edge signals</div>
+      <div class="signal-list" id="signal-list">
+        <div class="empty"><div class="empty-icon">⚖️</div><p>No signals yet.<br>Go to <strong style="color:var(--text)">Scanner</strong> and tap<br>"Run market scan".</p></div>
+      </div>
+    </div>
+
+    <!-- WEATHER OPPORTUNITIES -->
+    <div class="panel" id="p-weather">
+      <div class="sbar-row">
+        <div class="sbar"><div class="sbar-l">Weather opps</div><div class="sbar-v cv-s" id="wt-opps">0</div></div>
+        <div class="sbar"><div class="sbar-l">Best EV</div><div class="sbar-v cv-a" id="wt-ev">—</div></div>
+        <div class="sbar"><div class="sbar-l">Cities</div><div class="sbar-v cv-g" id="wt-cities">0</div></div>
+      </div>
+      <div class="sec">Forecast vs market gaps</div>
+      <div class="opp-list" id="opp-list">
+        <div class="empty"><div class="empty-icon">⛅</div><p>No weather signals yet.<br>Go to <strong style="color:var(--text)">Scanner</strong> and tap<br>"Run weather scan".</p></div>
+      </div>
+    </div>
+
+    <!-- CITY FORECASTS -->
+    <div class="panel" id="p-cities">
+      <div class="sec">Live city forecasts</div>
+      <div class="city-list" id="city-list">
+        <div class="empty"><div class="empty-icon">🌍</div><p>Run the weather scan to<br>load live forecasts.</p></div>
+      </div>
+    </div>
+
+    <!-- SCANNER -->
+    <div class="panel" id="p-scanner">
+      <!-- Market scanner -->
+      <div class="scan-block">
+        <div class="scan-hdr">
+          <div>
+            <div class="scan-title">⚖️ Market edge scanner</div>
+            <div class="scan-sub">Arb gaps · low liquidity · longshot bias · momentum</div>
+          </div>
+          <button class="run-btn" id="mkt-btn" onclick="runMarketScan()">
+            <svg id="mkt-icon" viewBox="0 0 24 24" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run
+          </button>
+        </div>
+        <div class="prog-wrap" id="mkt-prog">
+          <div class="prog-bg"><div class="prog-fill green" id="mkt-fill"></div></div>
+          <div class="prog-txt" id="mkt-txt">Fetching markets…</div>
+        </div>
+        <div class="filter-row">
+          <div class="fpill on" id="f-arb" onclick="toggleFilter('arb',this)">⚡ Arb gap</div>
+          <div class="fpill on" id="f-low" onclick="toggleFilter('low',this)">💧 Low liquidity</div>
+          <div class="fpill on" id="f-long" onclick="toggleFilter('long',this)">🎯 Longshot</div>
+          <div class="fpill on" id="f-mom" onclick="toggleFilter('mom',this)">📈 Momentum</div>
+        </div>
+      </div>
+
+      <!-- Weather scanner -->
+      <div class="scan-block">
+        <div class="scan-hdr">
+          <div>
+            <div class="scan-title">⛅ Weather scanner</div>
+            <div class="scan-sub">Real ECMWF/NOAA forecasts vs Polymarket odds · no API key</div>
+          </div>
+          <button class="run-btn wx" id="wx-btn" onclick="runWeatherScan()">
+            <svg id="wx-icon" viewBox="0 0 24 24" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run
+          </button>
+        </div>
+        <div class="prog-wrap" id="wx-prog">
+          <div class="prog-bg"><div class="prog-fill sky" id="wx-fill"></div></div>
+          <div class="prog-txt" id="wx-txt">Fetching forecasts…</div>
+        </div>
+        <div class="sec" style="margin-bottom:4px;margin-top:2px">Cities</div>
+        <div class="city-chips" id="city-chips"></div>
+      </div>
+
+      <!-- Run both -->
+      <button onclick="runAll()" style="width:100%;padding:10px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run both scanners
+      </button>
+    </div>
+
+    <!-- GUIDE (from research bot) -->
+    <div class="panel" id="p-guide">
+      <div class="sec">Edge types explained</div>
+      <div class="legend">
+        <div class="leg-row"><div class="leg-dot g"></div><div><div class="leg-name">⚡ Arb gap</div><div class="leg-desc">YES + NO don't sum to $1. Buy all outcomes for less than $1 guaranteed payout. Purely mathematical — no prediction needed.</div></div></div>
+        <div class="leg-row"><div class="leg-dot a"></div><div><div class="leg-name">💧 Low liquidity</div><div class="leg-desc">Markets under $100k volume where a single whale can move price. Wide spreads = common mispricing.</div></div></div>
+        <div class="leg-row"><div class="leg-dot p"></div><div><div class="leg-name">🎯 Longshot bias</div><div class="leg-desc">Outcomes priced 1–10% are historically ~35% overpriced. Buy NO on cheap longshots.</div></div></div>
+        <div class="leg-row"><div class="leg-dot b"></div><div><div class="leg-name">📈 Momentum</div><div class="leg-desc">Price moved sharply on low volume. Likely a whale move — mean reversion candidate. "Fade" means bet against the move.</div></div></div>
+        <div class="leg-row"><div class="leg-dot s"></div><div><div class="leg-name">🌡 Temperature gap</div><div class="leg-desc">ECMWF/NOAA forecast disagrees with Polymarket's implied probability for a city's daily high.</div></div></div>
+        <div class="leg-row"><div class="leg-dot r"></div><div><div class="leg-name">🌧 Rain gap</div><div class="leg-desc">Forecast rain probability diverges from Polymarket's YES price by more than 15%.</div></div></div>
+      </div>
+
+      <div class="sec">How to read signals</div>
+      <div class="guide-card">
+        <div class="guide-title">EV % — expected value per dollar</div>
+        <div class="guide-body">If YES trades at 35¢ but true probability is 50%, EV = (0.50 × $1) − $0.35 = <strong style="color:var(--green)">+$0.15 per share = +43% EV</strong>. The scanner surfaces the gap — whether the probability estimate is right is your judgment call.</div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">Volume threshold matters</div>
+        <div class="guide-body">Markets under <strong style="color:var(--amber)">$100k volume</strong> are only 61% accurate — barely above a coin flip. Above $100k, accuracy climbs above 90%. Low-volume signals = higher risk, higher potential edge.</div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">Half-Kelly sizing</div>
+        <div class="guide-body">Full Kelly on a 58% edge at 54¢ = ~8.5% of bankroll. <strong style="color:var(--blue)">Half-Kelly = 4.25%</strong>. Cuts variance roughly in half while keeping most of the expected return. Never more than 5% on any single market.</div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">Arb gap — safest edge</div>
+        <div class="guide-body">YES = 40¢, NO = 55¢ → sum = 95¢. Buy both for 95¢, collect $1 at resolution. <strong style="color:var(--green)">+5.3% guaranteed</strong> regardless of outcome. Move fast — liquid markets close these in minutes.</div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">Resolution criteria edge</div>
+        <div class="guide-body">The market title and the resolution rules are often different. Traders price the headline; sharp traders price the resolution criteria. Always read the full market description before trading any signal.</div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="p-settings">
+      <div class="scard">
+        <div class="scard-t">Telegram alerts</div>
+        <div class="field"><div class="flbl">Bot token — from @BotFather</div><input class="fin" id="tg-token" type="password" placeholder="1234567890:ABCdef…"/></div>
+        <div class="field"><div class="flbl">Chat ID — from @userinfobot</div><input class="fin" id="tg-chat" type="text" placeholder="-100123456789"/></div>
+        <div class="tog-row" style="border-top:none;padding-top:0">
+          <div class="tog-lbl">Alert on new arb gaps</div>
+          <div class="tog on" id="tog-arb" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div>
+        </div>
+        <div class="tog-row">
+          <div class="tog-lbl">Alert on weather signals</div>
+          <div class="tog on" id="tog-wx-alert" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div>
+        </div>
+        <div class="tog-row">
+          <div class="tog-lbl">Alert on all signals</div>
+          <div class="tog" id="tog-all" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div>
+        </div>
+        <button class="save-btn" onclick="saveTg()">Save</button>
+      </div>
+      <div class="scard">
+        <div class="scard-t">Scanner options</div>
+        <div class="tog-row" style="border-top:none;padding-top:0">
+          <div class="tog-lbl">Auto-scan every 5 min</div>
+          <div class="tog" id="tog-auto" onclick="toggleAuto(this)"><div class="tog-k"></div></div>
+        </div>
+        <div class="tog-row">
+          <div class="tog-lbl">High confidence only</div>
+          <div class="tog" id="tog-hc" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div>
+        </div>
+        <div class="tog-row">
+          <div class="tog-lbl">Min volume $10k+</div>
+          <div class="tog on" id="tog-minvol" onclick="this.classList.toggle('on')"><div class="tog-k"></div></div>
+        </div>
+      </div>
+      <div class="notice-box"><strong style="color:var(--text2)">Disclaimer:</strong> This tool surfaces statistical patterns. It does not predict outcomes. All trades involve real risk of loss. This is research, not financial advice.</div>
+    </div>
+
+  </div>
+
+  <div class="nav">
+    <button class="nb active" id="nav-signals" onclick="goTab('signals')">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Signals
+    </button>
+    <button class="nb" id="nav-weather" onclick="goTab('weather')">
+      <svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>Weather
+    </button>
+    <button class="nb" id="nav-cities" onclick="goTab('cities')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Forecasts
+    </button>
+    <button class="nb" id="nav-scanner" onclick="goTab('scanner')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Scanner
+    </button>
+    <button class="nb" id="nav-guide" onclick="goTab('guide')">
+      <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Guide
+    </button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   SHARED API LAYER — tries direct then 3 proxies in order
+   ============================================================ */
+const PM_GAMMA = 'https://gamma-api.polymarket.com';
+const PM_DATA  = 'https://data-api.polymarket.com';
+const PROXIES  = [
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://thingproxy.freeboard.io/fetch/${u}`,
+];
+
+async function tryFetch(url) {
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json' }, mode: 'cors' });
+    if (r.ok) return JSON.parse(await r.text());
+  } catch {}
+  for (const p of PROXIES) {
+    try {
+      const r = await fetch(p(url), { headers: { Accept: 'application/json' } });
+      if (!r.ok) continue;
+      const txt = await r.text();
+      try { const w = JSON.parse(txt); return w?.contents ? JSON.parse(w.contents) : w; } catch { return JSON.parse(txt); }
+    } catch {}
+  }
+  return null;
+}
+
+async function fetchMarkets(limit) {
+  let d = await tryFetch(`${PM_GAMMA}/markets?active=true&closed=false&limit=${limit}&order=volume&ascending=false`);
+  if (d) { const a = Array.isArray(d) ? d : (d.data || d.markets || []); if (a.length) return a; }
+  d = await tryFetch(`${PM_DATA}/markets?active=true&closed=false&limit=${limit}&sortBy=volumeClob&sortDirection=DESC`);
+  return d ? (Array.isArray(d) ? d : (d.data || d.markets || [])) : [];
+}
+
+/* ============================================================
+   WEATHER — fixed using weatherbot approach
+   Fetches by exact slug: highest-temperature-in-{city}-on-{month}-{day}-{year}
+   Uses airport coordinates matching Polymarket's resolution stations
+   ============================================================ */
+
+const WX_CITIES = [
+  {name:'New York',    slug:'nyc',         lat:40.7772,  lon:-73.8726, country:'US', station:'KLGA', nwsGrid:'OKX/37,39',  on:true},
+  {name:'Chicago',     slug:'chicago',     lat:41.9742,  lon:-87.9073, country:'US', station:'KORD', nwsGrid:'LOT/66,77',  on:true},
+  {name:'Miami',       slug:'miami',       lat:25.7959,  lon:-80.2870, country:'US', station:'KMIA', nwsGrid:'MFL/106,51', on:true},
+  {name:'Dallas',      slug:'dallas',      lat:32.8471,  lon:-96.8518, country:'US', station:'KDAL', nwsGrid:'FWD/87,107', on:true},
+  {name:'Seattle',     slug:'seattle',     lat:47.4502,  lon:-122.3088,country:'US', station:'KSEA', nwsGrid:'SEW/124,61', on:true},
+  {name:'Atlanta',     slug:'atlanta',     lat:33.6407,  lon:-84.4277, country:'US', station:'KATL', nwsGrid:'FFC/50,82',  on:true},
+  {name:'Los Angeles', slug:'los-angeles', lat:33.9425,  lon:-118.4081,country:'US', station:'KLAX', nwsGrid:'LOX/150,41', on:false},
+  {name:'London',      slug:'london',      lat:51.5033,  lon:0.0564,   country:'UK', station:'EGLC', on:true},
+  {name:'Tokyo',       slug:'tokyo',       lat:35.5533,  lon:139.7811, country:'JP', station:'RJTT', on:true},
+  {name:'Hong Kong',   slug:'hong-kong',   lat:22.3080,  lon:113.9185, country:'HK', station:'VHHH', on:true},
+  {name:'Seoul',       slug:'seoul',       lat:37.5665,  lon:126.9780, country:'KR', station:'RKSS', on:false},
+  {name:'Paris',       slug:'paris',       lat:49.0097,  lon:2.5479,   country:'FR', station:'LFPG', on:false},
+  {name:'Singapore',   slug:'singapore',   lat:1.3644,   lon:103.9915, country:'SG', station:'WSSS', on:false},
+];
+
+const MONTHS_EN = ['january','february','march','april','may','june',
+                   'july','august','september','october','november','december'];
+
+async function fetchNWSForecast(city) {
+  const dailyMax = {};
+  const h = { 'User-Agent': 'pm-scanner/1.0' };
+  try {
+    const r = await fetch(`https://api.weather.gov/stations/${city.station}/observations?limit=48`,
+      {headers:h, signal:AbortSignal.timeout(8000)});
+    if (r.ok) {
+      const d = await r.json();
+      for (const obs of (d.features||[])) {
+        const ts = obs.properties?.timestamp?.slice(0,10);
+        const tC = obs.properties?.temperature?.value;
+        if (ts && tC!=null) { const tF=Math.round(tC*9/5+32); if(!dailyMax[ts]||tF>dailyMax[ts]) dailyMax[ts]=tF; }
+      }
+    }
+  } catch {}
+  try {
+    const r = await fetch(`https://api.weather.gov/gridpoints/${city.nwsGrid}/forecast/hourly`,
+      {headers:h, signal:AbortSignal.timeout(8000)});
+    if (r.ok) {
+      const d = await r.json();
+      for (const p of (d.properties?.periods||[])) {
+        const ts=p.startTime?.slice(0,10);
+        let t=p.temperature;
+        if (p.temperatureUnit==='C') t=Math.round(t*9/5+32);
+        if (ts&&t!=null) { if(!dailyMax[ts]||t>dailyMax[ts]) dailyMax[ts]=t; }
+      }
+    }
+  } catch {}
+  return dailyMax;
+}
+
+async function fetchOpenMeteoFc(city) {
+  const out = {};
+  try {
+    const r = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max,precipitation_probability_max&forecast_days=7&timezone=auto`,
+      {signal:AbortSignal.timeout(8000)});
+    if (!r.ok) return out;
+    const d = await r.json();
+    (d.daily?.time||[]).forEach((t,i) => {
+      out[t] = {tempC: d.daily.temperature_2m_max?.[i], rainPct: d.daily.precipitation_probability_max?.[i]};
+    });
+  } catch {}
+  return out;
+}
+
+async function fetchMarketBySlug(slug) {
+  const data = await tryFetch(`${PM_GAMMA}/events?slug=${encodeURIComponent(slug)}`);
+  if (!data) return null;
+  const events = Array.isArray(data) ? data : [data];
+  /* Make sure it's the right slug — the API sometimes returns cached results */
+  return events.find(e => e.slug === slug) || null;
+}
+
+function parseTempRangeWx(question) {
+  if (!question) return null;
+  const q = question.toLowerCase();
+  if (q.includes('or below')||q.includes('or lower')) {
+    const m = question.match(/(\d+)°?F/i); if (m) return {lo:-999,hi:parseInt(m[1])};
+  }
+  if (q.includes('or higher')||q.includes('or above')||q.includes('or more')) {
+    const m = question.match(/(\d+)°?F/i); if (m) return {lo:parseInt(m[1]),hi:999};
+  }
+  const rng = question.match(/(\d+)[–\-](\d+)°?F/i);
+  if (rng) return {lo:parseInt(rng[1]),hi:parseInt(rng[2])};
+  return null;
+}
+
+/* fetchForecast kept for backward compat with renderCities */
+async function fetchForecast(city) {
+  if (city.country === 'US') return fetchNWSForecast(city);
+  return fetchOpenMeteoFc(city);
+}
+
+
+function analyseTemp(city, fc, market) {
+  const fMax = fc.daily?.temperature_2m_max?.[0]; if (fMax == null) return null;
+  const tokens = market.tokens ?? []; if (!tokens.length) return null;
+  let mOut = null, mPx = null;
+  for (const t of tokens) {
+    const name = t.outcome || t.name || '', px = parseFloat(t.price ?? 0);
+    const rng = name.match(/(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)/);
+    const num  = name.match(/(-?\d+(?:\.\d+)?)/); if (!num) continue;
+    const v = parseFloat(num[1]);
+    const plus = name.includes('+') || name.includes('≥') || /above|over/i.test(name);
+    if (rng) { if (fMax >= parseFloat(rng[1]) && fMax <= parseFloat(rng[2])) { mOut=name; mPx=px; } }
+    else if (plus) { if (fMax >= v) { mOut=name; mPx=px; } }
+    else { if (Math.abs(fMax-v) <= 0.6) { mOut=name; mPx=px; } }
+  }
+  if (!mOut || mPx == null || mPx > 0.80 || mPx < 0.05) return null;
+  const ev = Math.round(((1/mPx)-1)*100);
+  return { isWeather:true, type:'temp', edgeClass:'edge-temp', badgeClass:'badge-temp', badgeLabel:'🌡 Temperature',
+    city:city.name, market:market.question||market.title, slug:market.slug||market.id,
+    forecastVal:fMax.toFixed(1)+'°C', forecastDesc:'ECMWF forecast high',
+    marketVal:Math.round(mPx*100)+'¢', marketDesc:`"${mOut}" implied`,
+    edgePos:true, edgeLabel:'+'+ev+'% EV',
+    reason:`Forecast ${fMax.toFixed(1)}°C → "${mOut}" priced at ${Math.round(mPx*100)}¢. If forecast correct: +${ev}% EV.`,
+    confidence:Math.min(92,50+Math.round((1-mPx)*100)) };
+}
+
+function analyseRain(city, fc, market) {
+  const rP = fc.daily?.precipitation_probability_max?.[0]; if (rP == null) return null;
+  const title = (market.question||market.title||'').toLowerCase();
+  if (!title.includes('rain') && !title.includes('precipi')) return null;
+  const tokens = market.tokens ?? [];
+  const yt = tokens.find(t => (t.outcome||t.name||'').toLowerCase().includes('yes')) || tokens[0];
+  if (!yt) return null;
+  const mP = parseFloat(yt.price ?? 0.5), fP = rP/100, gap = Math.abs(fP-mP);
+  if (gap < 0.15) return null;
+  const fRain = fP > 0.5;
+  const ev = fRain ? Math.round(((1/mP)-1)*100) : Math.round(((1/(1-mP))-1)*100);
+  return { isWeather:true, type:'rain', edgeClass:'edge-rain', badgeClass:'badge-rain', badgeLabel:'🌧 Rain',
+    city:city.name, market:market.question||market.title, slug:market.slug||market.id,
+    forecastVal:Math.round(rP)+'%', forecastDesc:'Rain probability (NOAA/ECMWF)',
+    marketVal:Math.round(mP*100)+'¢', marketDesc:'YES implied probability',
+    edgePos:ev>0, edgeLabel:(ev>0?'+':'')+ev+'% EV',
+    reason:`Forecast: ${Math.round(rP)}% rain. Market YES at ${Math.round(mP*100)}¢. ${fRain?'BUY YES':'BUY NO'} — ${Math.round(gap*100)}¢ gap vs forecast.`,
+    confidence:Math.min(88,40+Math.round(gap*100)) };
+}
+
+/* ============================================================
+   CITIES
+   ============================================================ */
+const CITIES = [
+  {name:'London',   country:'UK', lat:51.51, lon:-0.13,  on:true},
+  {name:'Paris',    country:'FR', lat:48.85, lon:2.35,   on:true},
+  {name:'New York', country:'US', lat:40.71, lon:-74.01, on:true},
+  {name:'Tokyo',    country:'JP', lat:35.68, lon:139.69, on:true},
+  {name:'Seoul',    country:'KR', lat:37.57, lon:126.98, on:true},
+  {name:'Hong Kong',country:'HK', lat:22.30, lon:114.18, on:true},
+  {name:'Chicago',  country:'US', lat:41.88, lon:-87.63, on:true},
+  {name:'Singapore',country:'SG', lat:1.35,  lon:103.82, on:false},
+  {name:'Dubai',    country:'UAE',lat:25.20, lon:55.27,  on:false},
+  {name:'Sydney',   country:'AU', lat:-33.87,lon:151.21, on:false},
+  {name:'Berlin',   country:'DE', lat:52.52, lon:13.41,  on:false},
+  {name:'Amsterdam',country:'NL', lat:52.37, lon:4.90,   on:false},
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let signals      = [];
+let wxOpps       = [];
+let cityData     = {};
+let activeFilters = { arb:true, low:true, long:true, mom:true };
+let tgToken      = localStorage.getItem('pms_tg_token') || '';
+let tgChat       = localStorage.getItem('pms_tg_chat')  || '';
+let autoTimer    = null;
+let newSigs      = 0;
+let newWx        = 0;
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function fmtK(n){if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(0)+'k';return'$'+Math.round(n);}
+function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400);}
+
+function goTab(name) {
+  const all=['signals','weather','cities','scanner','guide','settings'];
+  all.forEach(n=>{
+    document.getElementById('p-'+n).classList.toggle('active',n===name);
+    const nb=document.getElementById('nav-'+n);
+    if(nb) nb.classList.toggle('active',n===name);
+  });
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',all[i]===name));
+  if(name==='signals'){newSigs=0;document.getElementById('sig-badge').style.display='none';}
+  if(name==='weather'){newWx=0;document.getElementById('wx-badge').style.display='none';}
+}
+
+function setStatus(txt, mode) {
+  const p=document.getElementById('status-pill');
+  p.className='status-pill'+(mode?' '+mode:'');
+  document.getElementById('status-txt').textContent=txt;
+}
+function showProg(id,on){document.getElementById(id).style.display=on?'block':'none';}
+function setProg(fillId,txtId,pct,txt){document.getElementById(fillId).style.width=pct+'%';document.getElementById(txtId).textContent=txt;}
+function toggleFilter(k,el){activeFilters[k]=!activeFilters[k];el.classList.toggle('on',activeFilters[k]);renderSignals();}
+
+/* ============================================================
+   MARKET SCANNER
+   ============================================================ */
+function getOutcomes(m) {
+  try {
+    const t = m.tokens ?? [];
+    if (Array.isArray(t) && t.length) return t.map(x => ({ name: x.outcome ?? x.name ?? 'Outcome', price: parseFloat(x.price ?? 0.5) }));
+    const y = parseFloat(m.outcomePrices?.[0] ?? m.bestAsk ?? 0.5);
+    if (y > 0) return [{ name: 'Yes', price: y }, { name: 'No', price: 1 - y }];
+  } catch {}
+  return [];
+}
+
+function detectArb(m) {
+  const oc = getOutcomes(m); if (oc.length < 2) return null;
+  const sum = oc.reduce((a, o) => a + o.price, 0), gap = 1 - sum;
+  if (gap < 0.02) return null;
+  const ev = Math.round((gap / sum) * 100);
+  return { type:'arb', edgeClass:'e-arb', badge:'b-arb', icon:'⚡', label:'Arb gap',
+    m1:{l:'Gap',v:(gap*100).toFixed(1)+'¢',c:'cv-g'}, m2:{l:'Risk-free EV',v:'+'+ev+'%',c:'cv-g'}, m3:{l:'Sum',v:(sum*100).toFixed(0)+'¢',c:'cv-a'},
+    action:'BUY ALL', actCls:'act-yes', reason:`All outcomes cost ${(sum*100).toFixed(1)}¢, pay $1 at resolution. ${ev}% guaranteed return.`, confidence:Math.min(100,ev*3) };
+}
+function detectLowLiq(m) {
+  const vol = parseFloat(m.volumeClob ?? m.volume ?? 0), liq = parseFloat(m.liquidity ?? m.liquidityClob ?? 0);
+  if (vol > 100000 || vol < 500) return null;
+  const oc = getOutcomes(m); if (!oc.length) return null;
+  const sp = Math.round(Math.abs(1 - oc.reduce((a,o)=>a+o.price,0)) * 100);
+  if (sp < 3) return null;
+  return { type:'low', edgeClass:'e-low', badge:'b-low', icon:'💧', label:'Low liquidity',
+    m1:{l:'Volume',v:fmtK(vol),c:'cv-a'}, m2:{l:'Spread',v:sp+'¢',c:'cv-a'}, m3:{l:'Liquidity',v:fmtK(liq),c:''},
+    action:'RESEARCH', actCls:'act-watch', reason:`Under $100k vol with ${sp}¢ spread. Whale-movable price — high risk, high reward for informed traders.`, confidence:Math.min(85,Math.round((1-vol/100000)*70+sp)) };
+}
+function detectLongshot(m) {
+  const oc = getOutcomes(m), ls = oc.filter(o => o.price >= 0.01 && o.price <= 0.12);
+  if (!ls.length) return null;
+  const vol = parseFloat(m.volumeClob ?? m.volume ?? 0); if (vol < 5000) return null;
+  const p = ls[0].price, ev = Math.round(((1-p*0.65)/(1-p)-1)*100);
+  if (ev < 5) return null;
+  return { type:'long', edgeClass:'e-long', badge:'b-long', icon:'🎯', label:'Longshot bias',
+    m1:{l:'YES price',v:Math.round(p*100)+'¢',c:'cv-p'}, m2:{l:'NO edge est.',v:'+'+ev+'%',c:'cv-g'}, m3:{l:'Outcome',v:(ls[0].name||'YES').slice(0,8),c:''},
+    action:'BUY NO', actCls:'act-no', reason:`"${ls[0].name||'outcome'}" at ${Math.round(p*100)}¢. Longshots are ~35% overpriced historically. Estimated NO edge: +${ev}%.`, confidence:Math.min(75,45+ev) };
+}
+function detectMomentum(m) {
+  const ch = parseFloat(m.lastTradePrice??0) - parseFloat(m.startingPrice??0.5);
+  const v24 = parseFloat(m.volume24hr??m.volume24h??0), vT = parseFloat(m.volumeClob??m.volume??1);
+  if (Math.abs(ch) < 0.08 || v24 < 100 || vT < 2000) return null;
+  const vR = vT > 0 ? v24/vT : 0; if (vR > 0.4) return null;
+  const pct = Math.round(Math.abs(ch)*100), up = ch > 0;
+  return { type:'mom', edgeClass:'e-mom', badge:'b-mom', icon:'📈', label:'Momentum',
+    m1:{l:'24h move',v:(up?'+':'')+pct+'¢',c:up?'cv-g':'cv-r'}, m2:{l:'24h vol',v:fmtK(v24),c:'cv-b'}, m3:{l:'Vol ratio',v:(vR*100).toFixed(0)+'%',c:''},
+    action:up?'FADE YES':'FADE NO', actCls:up?'act-no':'act-yes', reason:`Price ${up?'up':'down'} ${pct}¢ on low relative volume (${(vR*100).toFixed(0)}%). Possible whale move — mean reversion candidate.`, confidence:Math.min(70,30+pct) };
+}
+
+/* ============================================================
+   WEATHER ANALYSERS (from weather scanner)
+   ============================================================ */
+function wmoEmoji(c){if(c<=1)return'☀️';if(c<=3)return'⛅';if(c<=49)return'🌫️';if(c<=67)return'🌧️';if(c<=77)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';return'🌡️';}
+function wmoDesc(c){if(c===0)return'Clear';if(c<=2)return'Partly cloudy';if(c<=3)return'Overcast';if(c<=49)return'Fog';if(c<=55)return'Drizzle';if(c<=67)return'Rain';if(c<=77)return'Snow';if(c<=82)return'Showers';if(c<=99)return'Storm';return'';}
+
+function analyseTemp(city, fc, market) {
+  const fMax = fc.daily?.temperature_2m_max?.[0]; if (fMax == null) return null;
+  const tokens = market.tokens ?? []; if (!tokens.length) return null;
+  let mOut = null, mPx = null;
+  for (const t of tokens) {
+    const name = t.outcome || t.name || '', px = parseFloat(t.price ?? 0);
+    const rng = name.match(/(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)/);
+    const num  = name.match(/(-?\d+(?:\.\d+)?)/); if (!num) continue;
+    const v = parseFloat(num[1]);
+    const plus = name.includes('+') || name.includes('≥') || /above|over/i.test(name);
+    if (rng) { if (fMax >= parseFloat(rng[1]) && fMax <= parseFloat(rng[2])) { mOut=name; mPx=px; } }
+    else if (plus) { if (fMax >= v) { mOut=name; mPx=px; } }
+    else { if (Math.abs(fMax-v) <= 0.6) { mOut=name; mPx=px; } }
+  }
+  if (!mOut || mPx == null || mPx > 0.80 || mPx < 0.05) return null;
+  const ev = Math.round(((1/mPx)-1)*100);
+  return { isWeather:true, type:'temp', edgeClass:'edge-temp', badgeClass:'badge-temp', badgeLabel:'🌡 Temperature',
+    city:city.name, market:market.question||market.title, slug:market.slug||market.id,
+    forecastVal:fMax.toFixed(1)+'°C', forecastDesc:'ECMWF forecast high',
+    marketVal:Math.round(mPx*100)+'¢', marketDesc:`"${mOut}" implied`,
+    edgePos:true, edgeLabel:'+'+ev+'% EV',
+    reason:`Forecast ${fMax.toFixed(1)}°C → "${mOut}" priced at ${Math.round(mPx*100)}¢. If forecast correct: +${ev}% EV.`,
+    confidence:Math.min(92,50+Math.round((1-mPx)*100)) };
+}
+
+function analyseRain(city, fc, market) {
+  const rP = fc.daily?.precipitation_probability_max?.[0]; if (rP == null) return null;
+  const title = (market.question||market.title||'').toLowerCase();
+  if (!title.includes('rain') && !title.includes('precipi')) return null;
+  const tokens = market.tokens ?? [];
+  const yt = tokens.find(t => (t.outcome||t.name||'').toLowerCase().includes('yes')) || tokens[0];
+  if (!yt) return null;
+  const mP = parseFloat(yt.price ?? 0.5), fP = rP/100, gap = Math.abs(fP-mP);
+  if (gap < 0.15) return null;
+  const fRain = fP > 0.5;
+  const ev = fRain ? Math.round(((1/mP)-1)*100) : Math.round(((1/(1-mP))-1)*100);
+  return { isWeather:true, type:'rain', edgeClass:'edge-rain', badgeClass:'badge-rain', badgeLabel:'🌧 Rain',
+    city:city.name, market:market.question||market.title, slug:market.slug||market.id,
+    forecastVal:Math.round(rP)+'%', forecastDesc:'Rain probability (NOAA/ECMWF)',
+    marketVal:Math.round(mP*100)+'¢', marketDesc:'YES implied probability',
+    edgePos:ev>0, edgeLabel:(ev>0?'+':'')+ev+'% EV',
+    reason:`Forecast: ${Math.round(rP)}% rain. Market YES at ${Math.round(mP*100)}¢. ${fRain?'BUY YES':'BUY NO'} — ${Math.round(gap*100)}¢ gap vs forecast.`,
+    confidence:Math.min(88,40+Math.round(gap*100)) };
+}
+
+/* ============================================================
+   CITIES
+   ============================================================ */
+const CITIES = [
+  {name:'London',   country:'UK', lat:51.51, lon:-0.13,  on:true},
+  {name:'Paris',    country:'FR', lat:48.85, lon:2.35,   on:true},
+  {name:'New York', country:'US', lat:40.71, lon:-74.01, on:true},
+  {name:'Tokyo',    country:'JP', lat:35.68, lon:139.69, on:true},
+  {name:'Seoul',    country:'KR', lat:37.57, lon:126.98, on:true},
+  {name:'Hong Kong',country:'HK', lat:22.30, lon:114.18, on:true},
+  {name:'Chicago',  country:'US', lat:41.88, lon:-87.63, on:true},
+  {name:'Singapore',country:'SG', lat:1.35,  lon:103.82, on:false},
+  {name:'Dubai',    country:'UAE',lat:25.20, lon:55.27,  on:false},
+  {name:'Sydney',   country:'AU', lat:-33.87,lon:151.21, on:false},
+  {name:'Berlin',   country:'DE', lat:52.52, lon:13.41,  on:false},
+  {name:'Amsterdam',country:'NL', lat:52.37, lon:4.90,   on:false},
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let signals      = [];
+let wxOpps       = [];
+let cityData     = {};
+let activeFilters = { arb:true, low:true, long:true, mom:true };
+let tgToken      = localStorage.getItem('pms_tg_token') || '';
+let tgChat       = localStorage.getItem('pms_tg_chat')  || '';
+let autoTimer    = null;
+let newSigs      = 0;
+let newWx        = 0;
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function fmtK(n){if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(0)+'k';return'$'+Math.round(n);}
+function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400);}
+
+function goTab(name) {
+  const all=['signals','weather','cities','scanner','guide','settings'];
+  all.forEach(n=>{
+    document.getElementById('p-'+n).classList.toggle('active',n===name);
+    const nb=document.getElementById('nav-'+n);
+    if(nb) nb.classList.toggle('active',n===name);
+  });
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',all[i]===name));
+  if(name==='signals'){newSigs=0;document.getElementById('sig-badge').style.display='none';}
+  if(name==='weather'){newWx=0;document.getElementById('wx-badge').style.display='none';}
+}
+
+function setStatus(txt, mode) {
+  const p=document.getElementById('status-pill');
+  p.className='status-pill'+(mode?' '+mode:'');
+  document.getElementById('status-txt').textContent=txt;
+}
+function showProg(id,on){document.getElementById(id).style.display=on?'block':'none';}
+function setProg(fillId,txtId,pct,txt){document.getElementById(fillId).style.width=pct+'%';document.getElementById(txtId).textContent=txt;}
+function toggleFilter(k,el){activeFilters[k]=!activeFilters[k];el.classList.toggle('on',activeFilters[k]);renderSignals();}
+
+/* ============================================================
+   MARKET SCANNER
+   ============================================================ */
+async function runMarketScan() {
+  const btn=document.getElementById('mkt-btn'), icon=document.getElementById('mkt-icon');
+  btn.disabled=true; icon.style.animation='spin 0.8s linear infinite';
+  setStatus('scanning','running'); showProg('mkt-prog',true); setProg('mkt-fill','mkt-txt',5,'Fetching markets…');
+
+  const markets = await fetchMarkets(200);
+  if (!markets.length) {
+    setProg('mkt-fill','mkt-txt',100,'API unreachable — try Chrome or hosting the file online');
+    setTimeout(()=>showProg('mkt-prog',false),5000);
+    btn.disabled=false; icon.style.animation=''; setStatus('ready',''); return;
+  }
+
+  const minVol = document.getElementById('tog-minvol').classList.contains('on') ? 10000 : 0;
+  const hcOnly = document.getElementById('tog-hc').classList.contains('on');
+  const raw=[], seen=new Set();
+
+  for (let i=0;i<markets.length;i++) {
+    if (i%30===0) setProg('mkt-fill','mkt-txt',5+Math.round(i/markets.length*90),`Scanning ${i+1}/${markets.length}…`);
+    const m=markets[i];
+    if (parseFloat(m.volumeClob??m.volume??0)<minVol) continue;
+    for (const detect of [detectArb,detectLowLiq,detectLongshot,detectMomentum]) {
+      try {
+        const edge=detect(m); if (!edge) continue;
+        if (hcOnly && edge.confidence<60) continue;
+        const key=(m.id||m.conditionId||'')+':'+edge.type;
+        if (seen.has(key)) continue; seen.add(key);
+        raw.push({...edge, title:m.question||m.title||'', slug:m.slug||m.id||''});
+      } catch {}
+    }
+  }
+
+  signals=raw.sort((a,b)=>(b.confidence||0)-(a.confidence||0)).slice(0,80);
+  setProg('mkt-fill','mkt-txt',100,`Found ${signals.length} signals`);
+  setTimeout(()=>showProg('mkt-prog',false),1000);
+
+  newSigs=signals.length;
+  if(newSigs>0){document.getElementById('sig-badge').textContent=newSigs;document.getElementById('sig-badge').style.display='inline';}
+
+  const now=new Date();
+  document.getElementById('st-time').textContent=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('st-total').textContent=signals.length;
+  const best=signals.find(s=>s.m2?.c==='cv-g');
+  if(best) document.getElementById('st-edge').textContent=best.m2.v;
+
+  renderSignals();
+
+  const arbs=signals.filter(s=>s.type==='arb');
+  if(arbs.length&&tgToken&&tgChat&&document.getElementById('tog-arb').classList.contains('on')) {
+    sendTg(`⚡ ${arbs.length} arb gap${arbs.length>1?'s':''} found\n`+arbs.slice(0,3).map(s=>`• ${s.title} — ${s.m2.v}`).join('\n'));
+  }
+  toast(`Market scan done — ${signals.length} signals`);
+  btn.disabled=false; icon.style.animation=''; setStatus('ready','');
+}
+
+/* ============================================================
+   WEATHER SCANNER
+   ============================================================ */
+async function runWeatherScan() {
+  const btn=document.getElementById('wx-btn'), icon=document.getElementById('wx-icon');
+  btn.disabled=true; icon.style.animation='spin 0.8s linear infinite';
+  setStatus('weather scan','wx'); showProg('wx-prog',true);
+  wxOpps=[]; cityData={};
+
+  const active = WX_CITIES.filter(c=>c.on!==false);
+  const today  = new Date();
+  let totalMkts=0, totalSigs=0;
+
+  for (let i=0;i<active.length;i++) {
+    const city=active[i];
+    setProg('wx-fill','wx-txt',Math.round(5+(i/active.length)*85),`${city.name}…`);
+    try {
+      /* Fetch forecast */
+      const fc = city.country==='US' ? await fetchNWSForecast(city) : await fetchOpenMeteoFc(city);
+      cityData[city.name] = {city, forecast:fc, forecastType: city.country==='US'?'NWS':'ECMWF'};
+
+      /* Scan next 4 days by exact slug */
+      for (let d=0;d<=3;d++) {
+        const dt    = new Date(today); dt.setDate(today.getDate()+d);
+        const yyyy  = dt.getFullYear();
+        const month = MONTHS_EN[dt.getMonth()];
+        const day   = dt.getDate();
+        const ds    = dt.toISOString().slice(0,10);
+
+        /* Get forecast temp */
+        let tempF = null;
+        if (city.country==='US') {
+          tempF = fc[ds] ?? null;
+        } else {
+          const e = fc[ds];
+          if (e?.tempC!=null) tempF = Math.round(e.tempC*9/5+32);
+        }
+        if (tempF==null) continue;
+
+        /* Fetch market by exact slug */
+        const slug  = `highest-temperature-in-${city.slug}-on-${month}-${day}-${yyyy}`;
+        const event = await fetchMarketBySlug(slug);
+        if (!event) continue;
+        totalMkts++;
+
+        setProg('wx-fill','wx-txt',Math.round(5+(i/active.length)*85),
+          `${city.name} ${ds} — ${(event.markets||[]).length} buckets`);
+
+        for (const mkt of (event.markets||[])) {
+          const rng = parseTempRangeWx(mkt.question||'');
+          if (!rng) continue;
+          if (tempF < rng.lo || tempF > rng.hi) continue;
+
+          /* Parse price */
+          let yesP = 0;
+          try { yesP = parseFloat(JSON.parse(mkt.outcomePrices||'[0]')[0]); } catch {}
+          if (!yesP) yesP = parseFloat(mkt.lastTradePrice||mkt.bestBid||0);
+          if (yesP<=0||yesP>=1) continue;
+          const ev = Math.round(((1/yesP)-1)*100);
+          if (ev<1.5) continue;
+
+          const tempC = Math.round((tempF-32)*5/9);
+          wxOpps.push({
+            isWeather:true, type:'temp', edgeClass:'edge-temp',
+            badgeClass:'badge-temp', badgeLabel:'🌡 Temperature',
+            city:city.name, market:mkt.question||'',
+            slug:mkt.slug||event.slug||'',
+            forecastVal:`${tempF}°F (${tempC}°C)`,
+            forecastDesc:`${city.forecastType||'Forecast'} · ${ds} · ${city.station}`,
+            marketVal:`${Math.round(yesP*100)}¢`,
+            marketDesc:`"${(mkt.question||'').slice(0,35)}…" implied`,
+            edgePos:true, edgeLabel:`+${ev}% EV`,
+            reason:`${city.name}: forecast ${tempF}°F hits bucket "${(mkt.question||'').slice(0,40)}" priced at ${Math.round(yesP*100)}¢. EV: +${ev}%.`,
+            confidence:Math.min(92,20+ev),
+          });
+          totalSigs++;
+        }
+      }
+    } catch(e){console.warn(city.name,e.message);}
+  }
+
+  wxOpps.sort((a,b)=>b.confidence-a.confidence);
+  setProg('wx-fill','wx-txt',100,`${totalMkts} markets · ${totalSigs} signals`);
+  setTimeout(()=>showProg('wx-prog',false),1500);
+
+  newWx=wxOpps.length;
+  if(newWx>0){document.getElementById('wx-badge').textContent=newWx;document.getElementById('wx-badge').style.display='inline';}
+  document.getElementById('wt-opps').textContent=wxOpps.length;
+  document.getElementById('wt-cities').textContent=Object.keys(cityData).length;
+  const bestWx=wxOpps[0];
+  if(bestWx) document.getElementById('wt-ev').textContent=bestWx.edgeLabel;
+
+  renderWeather(); renderCities();
+
+  if(wxOpps.length&&tgToken&&tgChat&&document.getElementById('tog-wx-alert').classList.contains('on'))
+    sendTg('⛅ '+wxOpps.length+' weather signal'+(wxOpps.length>1?'s':'')+'\n'+wxOpps.slice(0,3).map(s=>'• '+s.city+': '+s.reason).join('\n'));
+
+  toast(`Weather: ${totalMkts} markets, ${totalSigs} signals`);
+  btn.disabled=false; icon.style.animation=''; setStatus('ready','');
+}
+
+
+async function runAll() { await runMarketScan(); await runWeatherScan(); }
+
+/* ============================================================
+   RENDER — MARKET SIGNALS
+   ============================================================ */
+function renderSignals() {
+  const el=document.getElementById('signal-list');
+  const filtered=signals.filter(s=>activeFilters[s.type]!==false);
+  if (!filtered.length) {
+    el.innerHTML=signals.length
+      ?'<div class="empty"><div class="empty-icon">🔍</div><p>No signals match current filters.</p></div>'
+      :'<div class="empty"><div class="empty-icon">⚖️</div><p>No signals yet.<br>Go to <strong style="color:var(--text)">Scanner</strong> and tap "Run".</p></div>';
+    return;
+  }
+  el.innerHTML=filtered.map(s=>{
+    const url=s.slug?`https://polymarket.com/event/${s.slug}`:'https://polymarket.com';
+    return `<div class="sig ${s.edgeClass}">
+      <div class="sig-head"><div class="sig-title">${s.title}</div><div class="sig-badge ${s.badge}">${s.icon} ${s.label}</div></div>
+      <div class="sig-metrics">
+        <div class="sm"><div class="sm-l">${s.m1.l}</div><div class="sm-v ${s.m1.c}">${s.m1.v}</div></div>
+        <div class="sm"><div class="sm-l">${s.m2.l}</div><div class="sm-v ${s.m2.c}">${s.m2.v}</div></div>
+        <div class="sm"><div class="sm-l">${s.m3.l}</div><div class="sm-v ${s.m3.c}">${s.m3.v}</div></div>
+      </div>
+      <div class="sig-footer"><div class="sf-reason">${s.reason}</div><a class="sf-act ${s.actCls}" href="${url}" target="_blank">${s.action} ↗</a></div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   RENDER — WEATHER OPPORTUNITIES
+   ============================================================ */
+function renderWeather() {
+  const el=document.getElementById('opp-list');
+  if (!wxOpps.length) {
+    el.innerHTML='<div class="empty"><div class="empty-icon">✅</div><p>No significant gaps found.<br>Markets are well-priced vs forecasts,<br>or no matching markets exist yet.</p></div>';
+    return;
+  }
+  el.innerHTML=wxOpps.map(o=>{
+    const url=o.slug?`https://polymarket.com/event/${o.slug}`:'https://polymarket.com';
+    return `<div class="ocard ${o.edgeClass}">
+      <div class="oc-head">
+        <div class="oc-top">
+          <div><div class="oc-city">${o.city}</div><div class="oc-market">${o.market}</div></div>
+          <div class="oc-badge ${o.badgeClass}">${o.badgeLabel}</div>
+        </div>
+      </div>
+      <div class="oc-compare">
+        <div class="oc-side fc"><div class="oc-lbl">Forecast</div><div class="oc-val">${o.forecastVal}</div><div class="oc-sub">${o.forecastDesc}</div></div>
+        <div class="oc-side mk"><div class="oc-lbl">Market price</div><div class="oc-val">${o.marketVal}</div><div class="oc-sub">${o.marketDesc}</div></div>
+      </div>
+      <div class="oc-footer">
+        <div class="oc-edge ${o.edgePos?'pos':'neg'}">${o.edgeLabel}</div>
+        <div class="oc-reason">${o.reason}</div>
+        <a class="oc-link" href="${url}" target="_blank">Trade ↗</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   RENDER — CITY FORECASTS
+   ============================================================ */
+function renderCities() {
+  const el=document.getElementById('city-list');
+  const entries=Object.values(cityData);
+  if (!entries.length){el.innerHTML='<div class="empty"><div class="empty-icon">🌍</div><p>Run the weather scan to load forecasts.</p></div>';return;}
+  el.innerHTML=entries.map(({city,forecast:fc})=>{
+    const cur=fc.current,daily=fc.daily;
+    const temp=(cur?.temperature_2m??'—').toFixed?.(1)??'—';
+    const feel=(cur?.apparent_temperature??'—').toFixed?.(0)??'—';
+    const code=cur?.weather_code??0;
+    const wind=(cur?.wind_speed_10m??0).toFixed(0);
+    const hum=cur?.relative_humidity_2m??'—';
+    const rainP=daily?.precipitation_probability_max?.[0]??'—';
+    const days=(daily?.time||[]).slice(0,5).map((t,i)=>{
+      const d=new Date(t),lbl=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+      return `<div class="fc-day"><div class="fc-lbl">${i===0?'Today':lbl}</div><div class="fc-ico">${wmoEmoji(daily.weather_code?.[i]??0)}</div><div class="fc-hi">${(daily.temperature_2m_max?.[i]??'—').toFixed?.(0)??'—'}°</div><div class="fc-lo">${(daily.temperature_2m_min?.[i]??'—').toFixed?.(0)??'—'}°</div></div>`;
+    }).join('');
+    return `<div class="city-card">
+      <div class="cc-top">
+        <div><div class="cc-name">${city.name}</div><div class="cc-country">${city.country} · ${wmoDesc(code)}</div></div>
+        <div class="cc-right"><div class="cc-emoji">${wmoEmoji(code)}</div><div class="cc-temp">${temp}°</div><div class="cc-feels">Feels ${feel}°C</div></div>
+      </div>
+      <div class="cc-metrics">
+        <div><div class="ccm-l">Wind</div><div class="ccm-v">${wind} km/h</div></div>
+        <div><div class="ccm-l">Humidity</div><div class="ccm-v" style="color:var(--sky)">${hum}%</div></div>
+        <div><div class="ccm-l">Rain chance</div><div class="ccm-v" style="color:var(--rain)">${rainP}%</div></div>
+      </div>
+      <div class="cc-fc">${days}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   CITY CHIPS
+   ============================================================ */
+function buildChips() {
+  document.getElementById('city-chips').innerHTML=WX_CITIES.map((c,i)=>`
+    <div class="chip ${c.on?'on':''}" onclick="toggleCity(${i},this)">${c.name}</div>
+  `).join('');
+}
+function toggleCity(i,el){WX_CITIES[i].on=!WX_CITIES[i].on;el.classList.toggle('on',WX_CITIES[i].on);}
+
+/* ============================================================
+   TELEGRAM
+   ============================================================ */
+async function sendTg(msg) {
+  if(!tgToken||!tgChat) return;
+  try{await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgChat,text:msg})});}catch{}
+}
+function saveTg(){
+  tgToken=document.getElementById('tg-token').value.trim();
+  tgChat=document.getElementById('tg-chat').value.trim();
+  localStorage.setItem('pms_tg_token',tgToken);
+  localStorage.setItem('pms_tg_chat',tgChat);
+  toast('Saved');
+}
+function toggleAuto(el){
+  el.classList.toggle('on');
+  if(el.classList.contains('on')){autoTimer=setInterval(runAll,5*60*1000);toast('Auto-scan on — every 5 min');}
+  else{clearInterval(autoTimer);autoTimer=null;toast('Auto-scan off');}
+}
+
+/* ============================================================
+   PWA INSTALL
+   ============================================================ */
+let dp=null;
+if(!window.matchMedia('(display-mode: standalone)').matches&&!navigator.standalone&&!localStorage.getItem('pms_dismissed')){
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('ibanner').classList.add('show');});
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)) document.getElementById('ibanner').classList.add('show');
+}
+document.getElementById('ib-yes').onclick=async()=>{
+  if(dp){dp.prompt();await dp.userChoice;dp=null;document.getElementById('ibanner').classList.remove('show');}
+  else{document.getElementById('ibanner').innerHTML='<div style="font-size:11px;color:var(--text2);width:100%;line-height:1.7"><strong style="color:var(--text)">iPhone:</strong> Tap <strong style="color:var(--green)">Share ↑</strong> in Safari → <strong style="color:var(--green)">Add to Home Screen</strong> → Add <button onclick="document.getElementById(\'ibanner\').classList.remove(\'show\');localStorage.setItem(\'pms_dismissed\',1)" style="margin-left:8px;font-size:10px;padding:3px 8px;border-radius:5px;border:0.5px solid var(--border2);background:none;color:var(--text3);cursor:pointer">Got it</button></div>';}
+};
+document.getElementById('ib-no').onclick=()=>{document.getElementById('ibanner').classList.remove('show');localStorage.setItem('pms_dismissed',1);};
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+document.getElementById('tg-token').value=tgToken;
+document.getElementById('tg-chat').value=tgChat;
+buildChips();
+</script>
+</body>
+</html>
