@@ -204,6 +204,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="save-btn" onclick="saveContext()">Save</button>
       </div>
       <div class="scard">
+        <div class="scard-t">Anthropic API key</div>
+        <div class="field">
+          <div class="flbl">Required to use PM AI Scanner. Get your free key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--indigo)">console.anthropic.com</a> → API Keys → Create Key. It starts with sk-ant-...</div>
+          <input class="fin" id="api-key" type="password" placeholder="sk-ant-api03-…"/>
+        </div>
+        <button class="save-btn" onclick="saveApiKey()">Save key</button>
+      </div>
+      <div class="scard">
         <div class="scard-t">Telegram alerts</div>
         <div class="field">
           <div class="flbl">Bot token — from @BotFather</div>
@@ -216,7 +224,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="save-btn" onclick="saveTg()">Save</button>
       </div>
       <div class="notice">
-        This app uses the Claude API directly. Each message costs a fraction of a cent in API usage — included in your Anthropic account. No data is stored outside this browser.
+        This app calls the Claude API directly from your browser using your own API key. Your key is stored only on your device. Each message costs a fraction of a cent. No data leaves your device except to Anthropic's API.
       </div>
     </div>
 
@@ -247,6 +255,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 /* ── State ── */
 let messages    = JSON.parse(localStorage.getItem('pm_ai_msgs') || '[]');
 let userContext = localStorage.getItem('pm_ai_ctx') || '';
+let apiKey      = localStorage.getItem('pm_ai_api_key') || '';
 let tgToken     = localStorage.getItem('pm_ai_tg_token') || '';
 let tgChat      = localStorage.getItem('pm_ai_tg_chat') || '';
 let isTyping    = false;
@@ -426,9 +435,23 @@ async function sendMessage(text) {
   showThinking();
 
   try {
+    if (!apiKey) {
+      hideThinking();
+      messages.push({ role: 'assistant', content: 'Please add your Anthropic API key in the **Settings** tab first. Get a free key at [console.anthropic.com](https://console.anthropic.com) → API Keys → Create Key.' });
+      renderMessages();
+      isTyping = false;
+      document.getElementById('send-btn').disabled = false;
+      return;
+    }
+
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1500,
@@ -494,6 +517,20 @@ async function sendTg(msg) {
 }
 
 /* ── Settings ── */
+function saveApiKey() {
+  apiKey = document.getElementById('api-key').value.trim();
+  localStorage.setItem('pm_ai_api_key', apiKey);
+  showToast(apiKey ? 'API key saved ✓' : 'Key cleared');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a2438;border:0.5px solid rgba(124,110,245,0.3);border-radius:16px;padding:7px 16px;font-size:12px;color:#e4e8f8;z-index:100;white-space:nowrap';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
 function saveContext() {
   userContext = document.getElementById('user-context').value.trim();
   localStorage.setItem('pm_ai_ctx', userContext);
@@ -516,11 +553,7 @@ function saveTg() {
   tgChat  = document.getElementById('tg-chat').value.trim();
   localStorage.setItem('pm_ai_tg_token', tgToken);
   localStorage.setItem('pm_ai_tg_chat', tgChat);
-  const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a2438;border:0.5px solid rgba(124,110,245,0.3);border-radius:16px;padding:7px 16px;font-size:12px;color:#e4e8f8;z-index:100';
-  t.textContent = 'Telegram saved';
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2000);
+  showToast('Telegram saved');
 }
 
 /* ── PWA install ── */
@@ -544,6 +577,7 @@ document.getElementById('ib-no').onclick = () => {
 };
 
 /* ── Boot ── */
+document.getElementById('api-key').value = apiKey;
 document.getElementById('user-context').value = userContext;
 document.getElementById('tg-token').value = tgToken;
 document.getElementById('tg-chat').value  = tgChat;
