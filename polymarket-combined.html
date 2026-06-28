@@ -1,0 +1,3038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Scanner">
+<meta name="theme-color" content="#080b12">
+<title>PM Scanner</title>
+<script>
+/* ── Inline PWA manifest ── */
+(function(){
+  const m={name:"PM Scanner",short_name:"PM Scanner",display:"standalone",background_color:"#080b12",theme_color:"#080b12",start_url:"/Polymarket-Scanner/polymarket-combined.html",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23080b12'/%3E%3Ctext x='96' y='125' font-family='system-ui' font-size='68' font-weight='700' fill='%2300ff88' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"}]};
+  const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'}));document.head.appendChild(l);
+})();
+
+/* ── Inline service worker — network-first, auto-reload on update ── */
+if ('serviceWorker' in navigator) {
+  const SW_VERSION = '2026-06-28-v25';
+  const FILE_PATH  = '/Polymarket-Scanner/polymarket-combined.html';
+  const swCode = `
+const CACHE = 'pm-scanner-${SW_VERSION.replace(/'/g,"\\'")}';
+const FILE  = '${FILE_PATH}';
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.add(FILE)).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  if (!e.request.url.includes('polymarket-combined.html')) return;
+  e.respondWith(
+    fetch(e.request).then(res => {
+      const clone = res.clone();
+      caches.open(CACHE).then(c => c.put(e.request, clone));
+      return res;
+    }).catch(() => caches.match(FILE))
+  );
+});
+`;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl, { scope: '/Polymarket-Scanner/' })
+    .then(reg => {
+      reg.update();
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
+    })
+    .catch(e => console.log('SW registration failed:', e));
+}
+</script>
+<style>
+:root{
+  --bg:#080b12;--bg2:#0d1117;--bg3:#131920;--bg4:#1a2230;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8edf4;--text2:#6b7d93;--text3:#3d4f62;
+  --green:#00ff88;--green-bg:rgba(0,255,136,0.1);--green-border:rgba(0,255,136,0.25);
+  --red:#ff4466;--red-bg:rgba(255,68,102,0.1);--red-border:rgba(255,68,102,0.25);
+  --amber:#ffb340;--amber-bg:rgba(255,179,64,0.1);--amber-border:rgba(255,179,64,0.3);
+  --blue:#4d9fff;--blue-bg:rgba(77,159,255,0.1);--blue-border:rgba(77,159,255,0.25);
+  --purple:#b36bff;--purple-bg:rgba(179,107,255,0.1);--purple-border:rgba(179,107,255,0.3);
+  --sky:#38bdf8;--sky-bg:rgba(56,189,248,0.1);--sky-border:rgba(56,189,248,0.25);
+  --sun:#fbbf24;--sun-bg:rgba(251,191,36,0.1);--sun-border:rgba(251,191,36,0.25);
+  --rain:#60a5fa;--rain-bg:rgba(96,165,250,0.1);--rain-border:rgba(96,165,250,0.25);
+  --r:11px;--rs:7px;--mono:'SF Mono','Fira Code',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px 11px;border-bottom:0.5px solid var(--border);flex-shrink:0;padding-top:max(13px,env(safe-area-inset-top))}
+.hdr-left{display:flex;align-items:center;gap:9px}
+.logo{width:30px;height:30px;border-radius:7px;background:var(--green-bg);border:0.5px solid var(--green-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green)}
+.app-name{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-0.3px}
+.app-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.status-pill{display:flex;align-items:center;gap:5px;font-size:10px;padding:3px 9px;border-radius:20px;background:var(--bg3);border:0.5px solid var(--border);color:var(--text3);font-family:var(--mono)}
+.status-pill.running{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.status-pill.wx{background:var(--sky-bg);border-color:var(--sky-border);color:var(--sky)}
+.sdot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.status-pill.running .sdot,.status-pill.wx .sdot{animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+
+/* Tabs - scrollable to fit all 5 */
+.tabs{display:flex;border-bottom:0.5px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:10px 14px;font-size:11px;color:var(--text3);text-align:center;cursor:pointer;border-bottom:1.5px solid transparent;transition:all 0.15s;position:relative;white-space:nowrap}
+.tab.active{color:var(--text);border-bottom-color:var(--green)}
+.tbadge{position:absolute;top:6px;right:4px;background:var(--amber);color:#000;font-size:8px;font-weight:800;padding:1px 4px;border-radius:8px;display:none}
+
+/* Panels */
+.panels{flex:1;overflow:hidden}
+.panel{display:none;height:100%;overflow-y:auto;padding:12px 16px;padding-bottom:max(74px,calc(58px + env(safe-area-inset-bottom)))}
+.panel.active{display:block}
+.panel::-webkit-scrollbar{width:2px}
+.panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Nav */
+.nav{display:flex;border-top:0.5px solid var(--border);flex-shrink:0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:9px;color:var(--text3);cursor:pointer;border:none;background:none;transition:color 0.15s;text-transform:uppercase;letter-spacing:0.03em}
+.nb.active{color:var(--green)}
+.nb svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Shared stat bar */
+.sbar-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.sbar{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:9px 11px}
+.sbar-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em}
+.sbar-v{font-size:19px;font-weight:700;margin-top:2px;font-family:var(--mono)}
+.cv-g{color:var(--green)} .cv-a{color:var(--amber)} .cv-b{color:var(--blue)} .cv-s{color:var(--sky)}
+
+/* Section label */
+.sec{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+
+/* ── Market signal cards ── */
+.signal-list{display:flex;flex-direction:column;gap:8px}
+.sig{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.sig.e-arb{border-left:2px solid var(--green)}
+.sig.e-low{border-left:2px solid var(--amber)}
+.sig.e-long{border-left:2px solid var(--purple)}
+.sig.e-mom{border-left:2px solid var(--blue)}
+
+.sig-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:10px 12px 0}
+.sig-title{font-size:12px;font-weight:500;color:var(--text);line-height:1.4;flex:1}
+.sig-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
+.b-arb{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.b-low{background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--amber-border)}
+.b-long{background:var(--purple-bg);color:var(--purple);border:0.5px solid var(--purple-border)}
+.b-mom{background:var(--blue-bg);color:var(--blue);border:0.5px solid var(--blue-border)}
+
+.sig-metrics{display:flex;padding:8px 12px}
+.sm{flex:1;border-right:0.5px solid var(--border);padding-right:8px;margin-right:8px}
+.sm:last-child{border-right:none;padding-right:0;margin-right:0}
+.sm-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em}
+.sm-v{font-size:13px;font-weight:600;font-family:var(--mono);margin-top:1px}
+
+.sig-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:0.5px solid var(--border);background:var(--bg3)}
+.sf-reason{font-size:10px;color:var(--text2);line-height:1.4;flex:1}
+.sf-act{font-size:10px;font-weight:600;padding:4px 9px;border-radius:5px;text-decoration:none;white-space:nowrap;margin-left:8px}
+.act-yes{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.act-no{background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border)}
+.act-watch{background:var(--blue-bg);color:var(--blue);border:0.5px solid var(--blue-border)}
+
+/* Filter pills */
+.filter-row{display:flex;flex-wrap:wrap;gap:5px}
+.fpill{font-size:10px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;background:var(--bg3);white-space:nowrap;transition:all 0.15s}
+.fpill.on{border-color:var(--green-border);color:var(--green);background:var(--green-bg)}
+.fpill.off{border-color:rgba(255,68,102,0.4);color:var(--red);background:rgba(255,68,102,0.08);text-decoration:line-through;opacity:0.6}
+
+/* ── Weather opp cards ── */
+.opp-list{display:flex;flex-direction:column;gap:8px}
+.ocard{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ocard.edge-temp{border-left:2px solid var(--sun)}
+.ocard.edge-rain{border-left:2px solid var(--rain)}
+.oc-head{padding:10px 12px 0}
+.oc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px}
+.oc-city{font-size:13px;font-weight:600;color:var(--text)}
+.oc-market{font-size:11px;color:var(--text2);margin-top:1px;line-height:1.3}
+.oc-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em}
+.badge-temp{background:var(--sun-bg);color:var(--sun);border:0.5px solid var(--sun-border)}
+.badge-rain{background:var(--rain-bg);color:var(--rain);border:0.5px solid var(--rain-border)}
+.oc-compare{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 12px 10px}
+.oc-side{background:var(--bg3);border-radius:6px;padding:8px 10px}
+.oc-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+.oc-val{font-size:20px;font-weight:700;font-family:var(--mono)}
+.oc-sub{font-size:10px;color:var(--text2);margin-top:1px}
+.oc-side.fc .oc-val{color:var(--sky)}
+.oc-side.mk .oc-val{color:var(--sun)}
+.oc-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:0.5px solid var(--border);background:var(--bg3)}
+.oc-edge{font-size:11px;font-weight:600}
+.oc-edge.pos{color:var(--green)} .oc-edge.neg{color:var(--red)}
+.oc-reason{font-size:10px;color:var(--text2);flex:1;margin:0 8px;line-height:1.3}
+.oc-link{font-size:10px;font-weight:600;color:var(--sky);text-decoration:none;white-space:nowrap;padding:4px 8px;border:0.5px solid var(--sky-border);border-radius:5px;background:var(--sky-bg)}
+
+/* ── City cards ── */
+.city-list{display:flex;flex-direction:column;gap:8px}
+.city-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.cc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.cc-name{font-size:13px;font-weight:600;color:var(--text)}
+.cc-country{font-size:10px;color:var(--text3);margin-top:1px}
+.cc-right{text-align:right}
+.cc-emoji{font-size:22px}
+.cc-temp{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--sun)}
+.cc-feels{font-size:10px;color:var(--text2)}
+.cc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)}
+.ccm-l{font-size:9px;color:var(--text3)}
+.ccm-v{font-size:12px;font-weight:500;color:var(--text);margin-top:2px}
+.cc-fc{display:flex;gap:5px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.fc-day{flex-shrink:0;text-align:center;padding:5px 7px;background:var(--bg3);border-radius:6px;min-width:42px}
+.fc-lbl{font-size:9px;color:var(--text3)}
+.fc-ico{font-size:12px;margin:2px 0}
+.fc-hi{font-size:11px;font-weight:600;color:var(--sun)}
+.fc-lo{font-size:10px;color:var(--sky)}
+
+/* ── Scanner blocks ── */
+.scan-block{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px}
+.scan-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.scan-title{font-size:12px;font-weight:600;color:var(--text)}
+.scan-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.run-btn{font-size:11px;font-weight:600;padding:7px 13px;border-radius:6px;border:0.5px solid var(--green-border);background:var(--green-bg);color:var(--green);cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.run-btn:disabled{opacity:0.4;cursor:not-allowed}
+.run-btn.wx{border-color:var(--sky-border);background:var(--sky-bg);color:var(--sky)}
+
+.prog-wrap{display:none;margin-bottom:8px}
+.prog-bg{background:var(--bg4);border-radius:3px;height:3px;overflow:hidden;margin-bottom:5px}
+.prog-fill{height:100%;border-radius:3px;transition:width 0.4s;width:0%}
+.prog-fill.green{background:var(--green)}
+.prog-fill.sky{background:var(--sky)}
+.prog-txt{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+.city-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{font-size:10px;padding:4px 9px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;background:var(--bg3);white-space:nowrap}
+.chip.on{border-color:var(--sky-border);color:var(--sky);background:var(--sky-bg)}
+
+/* ── Edge guide (from research bot) ── */
+.legend{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.leg-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:var(--rs);background:var(--bg2);border:0.5px solid var(--border)}
+.leg-dot{width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:16px}
+.leg-dot.g{background:var(--green)} .leg-dot.a{background:var(--amber)}
+.leg-dot.p{background:var(--purple)} .leg-dot.b{background:var(--blue)}
+.leg-dot.s{background:var(--sky)} .leg-dot.r{background:var(--rain)}
+.leg-name{font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px}
+.leg-desc{font-size:10px;color:var(--text2);line-height:1.5}
+.guide-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:11px 13px;margin-bottom:7px}
+.guide-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px}
+.guide-body{font-size:11px;color:var(--text2);line-height:1.6}
+
+/* ── Settings ── */
+.scard{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px}
+.scard-t{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.field{margin-bottom:9px}
+.flbl{font-size:10px;color:var(--text3);margin-bottom:4px}
+.fin{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--rs);padding:8px 10px;color:var(--text);font-size:11px;font-family:var(--mono);outline:none}
+.fin:focus{border-color:var(--green-border)}
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:0.5px solid var(--border)}
+.tog-lbl{font-size:11px;color:var(--text2)}
+.tog{width:36px;height:20px;border-radius:10px;background:var(--bg4);border:0.5px solid var(--border2);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.tog.on{background:var(--green);border-color:var(--green)}
+.tog-k{width:14px;height:14px;border-radius:7px;background:white;position:absolute;top:2px;left:2px;transition:left 0.2s}
+.tog.on .tog-k{left:18px}
+.save-btn{width:100%;margin-top:11px;padding:9px;border-radius:var(--rs);border:0.5px solid var(--green-border);background:var(--green-bg);color:var(--green);font-size:12px;font-weight:600;cursor:pointer}
+.notice-box{font-size:10px;color:var(--text3);line-height:1.6;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs)}
+
+/* Portfolio optimizer */
+.pt-bet{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.pt-bet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:10px 12px 8px}
+.pt-bet-title{font-size:12px;font-weight:500;color:var(--text);line-height:1.4;flex:1}
+.pt-bet-ev{font-size:11px;font-weight:700;color:var(--green);font-family:var(--mono);flex-shrink:0}
+.pt-bet-meta{display:flex;gap:0;padding:0 12px 8px}
+.pt-bet-col{flex:1;border-right:0.5px solid var(--border);padding-right:8px;margin-right:8px}
+.pt-bet-col:last-child{border-right:none;padding-right:0;margin-right:0}
+.pt-bet-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em}
+.pt-bet-val{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text);margin-top:1px}
+.pt-bet-bar{height:3px;background:var(--bg4);margin:0 12px 10px;border-radius:2px;overflow:hidden}
+.pt-bet-bar-fill{height:100%;background:var(--green);border-radius:2px}
+.pt-bet-rm{font-size:10px;color:var(--text3);padding:4px 8px;border:0.5px solid var(--border);border-radius:5px;background:none;cursor:pointer}
+
+/* Filter pills */
+.filter-row{display:flex;flex-wrap:wrap;gap:5px}
+.fpill{font-size:10px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--border2);color:var(--text3);cursor:pointer;background:var(--bg3);white-space:nowrap;transition:all 0.15s}
+.fpill.on{border-color:var(--green-border);color:var(--green);background:var(--green-bg)}
+.fpill.off{border-color:rgba(255,68,102,0.4);color:var(--red);background:rgba(255,68,102,0.08);text-decoration:line-through;opacity:0.6}
+input[type=range]{-webkit-appearance:none;height:3px;border-radius:2px;background:var(--bg4);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer}
+
+/* Bracket sizing table */
+.bracket-sizing{margin:0 12px 8px;border:0.5px solid var(--border);border-radius:var(--rs);overflow:hidden}
+.bs-header{display:grid;grid-template-columns:1fr 44px 54px 50px;gap:0;padding:5px 8px;background:var(--bg4);border-bottom:0.5px solid var(--border)}
+.bs-col-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em}
+.bs-row{display:grid;grid-template-columns:1fr 44px 54px 50px;gap:0;padding:6px 8px;border-bottom:0.5px solid var(--border)}
+.bs-row:last-child{border-bottom:none}
+.bs-exact{background:rgba(0,255,136,0.06)}
+.bs-name{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bs-val{font-size:11px;font-weight:600;font-family:var(--mono);color:var(--text)}
+.bs-total{padding:7px 8px;background:var(--bg3);border-top:0.5px solid var(--border2);display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.bs-total-label{font-size:10px;color:var(--text3);margin-right:4px}
+.bs-total-val{font-size:12px;font-weight:700;font-family:var(--mono);color:var(--amber)}
+.bs-total-payout{font-size:10px;color:var(--text2);width:100%}
+
+/* Bracket / arb card */
+.edge-arb{border-left:2px solid var(--green) !important}
+.badge-arb{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.badge-bracket{background:var(--purple-bg);color:var(--purple);border:0.5px solid var(--purple-border)}
+.bracket-buckets{padding:0 12px 8px;display:flex;flex-direction:column;gap:3px}
+.bucket-row{display:flex;align-items:center;justify-content:space-between;font-size:10px;padding:4px 8px;background:var(--bg3);border-radius:5px}
+.bucket-name{color:var(--text2);flex:1}
+.bucket-price{font-family:var(--mono);font-weight:600;color:var(--amber)}
+.bucket-link{color:var(--sky);text-decoration:none;margin-left:8px}
+.bracket-total{display:flex;align-items:center;justify-content:space-between;padding:5px 12px 8px;font-size:11px}
+.bt-label{color:var(--text3)}
+.bt-val{font-family:var(--mono);font-weight:700}
+.bt-val.good{color:var(--green)}
+.bt-val.ok{color:var(--amber)}
+.bt-val.bad{color:var(--red)}
+
+/* Position size badge */
+.pos-size{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(0,255,136,0.06);border-top:0.5px solid rgba(0,255,136,0.15)}
+.ps-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em}
+.ps-val{font-size:13px;font-weight:700;color:var(--green);font-family:var(--mono)}
+.ps-detail{font-size:10px;color:var(--text2)}
+
+/* Confidence filter pills */
+.conf-filter-row{display:flex;gap:6px;margin-bottom:10px}
+.cpill{flex:1;text-align:center;padding:7px 0;border-radius:8px;border:1.5px solid var(--border2);color:var(--text3);cursor:pointer;font-size:11px;font-weight:600;transition:all 0.15s;background:var(--bg3)}
+.cpill.high.on{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.cpill.med.on{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
+.cpill.low.on{border-color:var(--red);color:var(--red);background:rgba(255,68,102,0.12)}
+
+/* Bracket shift controls */
+.shift-row{display:flex;align-items:center;justify-content:center;gap:10px;padding:7px 12px;border-top:0.5px solid var(--border);background:var(--bg3)}
+.shift-btn{display:flex;align-items:center;gap:5px;padding:5px 13px;border-radius:7px;border:0.5px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.12s;user-select:none;-webkit-user-select:none}
+.shift-btn:active{transform:scale(0.95);background:var(--border2)}
+.shift-btn.up{border-color:var(--green-border);color:var(--green)}
+.shift-btn.dn{border-color:var(--sky-border);color:var(--sky)}
+.shift-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);flex:1;text-align:center}
+
+/* Misc */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:26px;margin-bottom:8px;opacity:0.3}
+.empty p{font-size:11px;line-height:1.6}
+.spin{animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(68px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg4);border:0.5px solid var(--border2);border-radius:16px;padding:6px 14px;font-size:11px;color:var(--text);opacity:0;transition:all 0.2s;pointer-events:none;white-space:nowrap;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Install banner */
+.ibanner{display:none;align-items:center;gap:10px;padding:9px 16px;background:var(--bg3);border-bottom:0.5px solid var(--green-border);flex-shrink:0}
+.ibanner.show{display:flex}
+.ib-txt{font-size:11px;color:var(--text2);flex:1}
+.ib-txt strong{color:var(--text);font-weight:500;display:block}
+.ib-yes{font-size:11px;padding:5px 11px;border-radius:6px;border:0.5px solid var(--green-border);background:var(--green-bg);color:var(--green);cursor:pointer;white-space:nowrap}
+.ib-no{font-size:11px;padding:5px 8px;border:none;background:none;color:var(--text3);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="logo">PM</div>
+      <div>
+        <div class="app-name">PM Scanner</div>
+        <div class="app-sub">Weather · Guide</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="copyAppLink()" title="Copy link" style="background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px" id="copy-link-btn">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Link
+      </button>
+      <div class="status-pill" id="status-pill">
+        <div class="sdot"></div><span id="status-txt">ready</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ibanner" id="ibanner">
+    <div class="ib-txt"><strong>Add to home screen</strong>Open like a real app</div>
+    <button class="ib-yes" id="ib-yes">Install</button>
+    <button class="ib-no" id="ib-no">✕</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="goTab('weather')">Weather<span class="tbadge" id="wx-badge">0</span></div>
+    <div class="tab" onclick="goTab('cities')">Forecasts</div>
+    <div class="tab" onclick="goTab('scanner')">Scanner</div>
+    <div class="tab" onclick="goTab('guide')">Guide</div>
+    <div class="tab" onclick="goTab('settings')">Settings</div>
+  </div>
+
+  <div class="panels">
+
+    <!-- WEATHER OPPORTUNITIES -->
+    <div class="panel active" id="p-weather">
+      <div class="sbar-row">
+        <div class="sbar"><div class="sbar-l">Showing</div><div class="sbar-v cv-s" id="wt-showing">0</div></div>
+        <div class="sbar"><div class="sbar-l">Best EV</div><div class="sbar-v cv-a" id="wt-ev">—</div></div>
+        <div class="sbar"><div class="sbar-l">Cities</div><div class="sbar-v cv-g" id="wt-cities">0</div></div>
+      </div>
+      <div id="wt-freshness" style="display:none;align-items:center;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:10px;padding:0 2px">
+        <span id="wt-fresh-txt">—</span>
+        <span onclick="runWeatherScan()" style="color:var(--sky);cursor:pointer;font-weight:600">↻ Refresh</span>
+      </div>
+
+      <!-- Confidence quick-filter -->
+      <div class="conf-filter-row">
+        <div class="cpill high on" id="cf-high" onclick="toggleConfFilter('high',this)">🟢 High</div>
+        <div class="cpill med on"  id="cf-med"  onclick="toggleConfFilter('med',this)">🟡 Medium</div>
+        <div class="cpill low on"  id="cf-low"  onclick="toggleConfFilter('low',this)">🔴 Low</div>
+      </div>
+
+      <!-- Filter bar -->
+      <div id="filter-bar" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-bottom:10px">
+        <!-- Type filters -->
+        <div class="sec" style="margin-bottom:6px">Type</div>
+        <div class="filter-row" style="margin-bottom:10px">
+          <div class="fpill on" id="ft-arb"     onclick="toggleWxFilter('arb',this)">⚡ Arb only</div>
+          <div class="fpill on" id="ft-bracket" onclick="toggleWxFilter('bracket',this)">🎯 +EV bracket</div>
+          <div class="fpill on" id="ft-single"  onclick="toggleWxFilter('single',this)">🌡 Temperature</div>
+        </div>
+
+        <!-- EV slider -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div class="sec" style="margin-bottom:0">Min EV</div>
+          <div style="font-size:11px;font-weight:600;color:var(--green);font-family:var(--mono)" id="ev-label">0%</div>
+        </div>
+        <input type="range" id="ev-slider" min="0" max="100" value="0" step="1"
+          style="width:100%;accent-color:var(--green);margin-bottom:10px"
+          oninput="document.getElementById('ev-label').textContent=this.value+'%';applyWxFilters()"/>
+
+        <!-- Day filter -->
+        <div class="sec" style="margin-bottom:6px">Forecast day</div>
+        <div class="filter-row" style="margin-bottom:10px">
+          <div class="fpill on" id="fd-0" onclick="toggleDayFilter(0,this)">Today</div>
+          <div class="fpill on" id="fd-1" onclick="toggleDayFilter(1,this)">+1</div>
+          <div class="fpill on" id="fd-2" onclick="toggleDayFilter(2,this)">+2</div>
+          <div class="fpill on" id="fd-3" onclick="toggleDayFilter(3,this)">+3</div>
+        </div>
+
+        <!-- Bracket count filter -->
+        <div class="sec" style="margin-bottom:6px">Buckets</div>
+        <div class="filter-row" style="margin-bottom:10px">
+          <div class="fpill on" id="fb-any" onclick="setBucketFilter('any',this)">Any</div>
+          <div class="fpill"    id="fb-1"   onclick="setBucketFilter('1',this)">Single</div>
+          <div class="fpill"    id="fb-2"   onclick="setBucketFilter('2',this)">2 buckets</div>
+          <div class="fpill"    id="fb-3"   onclick="setBucketFilter('3',this)">3 buckets</div>
+          <div class="fpill"    id="fb-4p"  onclick="setBucketFilter('4+',this)">4+ buckets</div>
+        </div>
+
+        <!-- Delta filter -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div class="sec" style="margin-bottom:0">Max model Δ</div>
+          <div style="font-size:11px;font-weight:600;color:var(--sky);font-family:var(--mono)" id="delta-label">Any</div>
+        </div>
+        <div class="filter-row" style="margin-bottom:10px">
+          <div class="fpill on" id="fd-any" onclick="setDeltaFilter('any',this)">Any</div>
+          <div class="fpill"    id="fd-1"   onclick="setDeltaFilter('1',this)">&lt;1°</div>
+          <div class="fpill"    id="fd-2"   onclick="setDeltaFilter('2',this)">&lt;2°</div>
+          <div class="fpill"    id="fd-3"   onclick="setDeltaFilter('3',this)">&lt;3°</div>
+          <div class="fpill"    id="fd-none" onclick="setDeltaFilter('none',this)">No local model</div>
+        </div>
+
+        <!-- Bet window filter -->
+        <div class="sec" style="margin-bottom:6px">Bet window</div>
+        <div class="filter-row" style="margin-bottom:10px">
+          <div class="fpill on" id="fw-any"    onclick="setWindowFilter('any',this)">Any</div>
+          <div class="fpill"    id="fw-open"   onclick="setWindowFilter('open',this)">🕐 Open</div>
+          <div class="fpill"    id="fw-urgent" onclick="setWindowFilter('urgent',this)">⏰ Closing</div>
+          <div class="fpill"    id="fw-future" onclick="setWindowFilter('future',this)">+1 day</div>
+        </div>
+
+        <!-- Sort -->
+        <div class="sec" style="margin-bottom:6px">Sort by</div>
+        <div class="filter-row">
+          <div class="fpill on" id="fs-ev"   onclick="setWxSort('ev',this)">EV ↓</div>
+          <div class="fpill"    id="fs-conf" onclick="setWxSort('conf',this)">Confidence ↓</div>
+          <div class="fpill"    id="fs-city" onclick="setWxSort('city',this)">City A–Z</div>
+          <div class="fpill"    id="fs-date" onclick="setWxSort('date',this)">Date ↑</div>
+        </div>
+      </div>
+
+      <div class="sec" id="wx-results-label">Forecast vs market gaps</div>
+      <div class="opp-list" id="opp-list">
+        <div class="empty"><div class="empty-icon">⛅</div><p>No weather signals yet.<br>Go to <strong style="color:var(--text)">Scanner</strong> and tap<br>"Run weather scan".</p></div>
+      </div>
+    </div>
+
+    <!-- CITY FORECASTS -->
+    <div class="panel" id="p-cities">
+      <div class="sec">Live city forecasts</div>
+      <div class="city-list" id="city-list">
+        <div class="empty"><div class="empty-icon">🌍</div><p>Run the weather scan to<br>load live forecasts.</p></div>
+      </div>
+    </div>
+
+    <!-- SCANNER -->
+    <div class="panel" id="p-scanner">
+      <!-- Weather scanner -->
+      <div class="scan-block">
+        <div class="scan-hdr">
+          <div>
+            <div class="scan-title">⛅ Weather scanner</div>
+            <div class="scan-sub">NWS (US) + ECMWF (international) · exact slug matching · no API key</div>
+          </div>
+          <button class="run-btn wx" id="wx-btn" onclick="runWeatherScan()">
+            <svg id="wx-icon" viewBox="0 0 24 24" style="width:12px;height:12px"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run
+          </button>
+        </div>
+        <div class="prog-wrap" id="wx-prog">
+          <div class="prog-bg"><div class="prog-fill sky" id="wx-fill"></div></div>
+          <div class="prog-txt" id="wx-txt">Fetching forecasts…</div>
+        </div>
+        <!-- Continent filter -->
+        <div class="sec" style="margin-bottom:6px;margin-top:4px">Continent</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+          <div class="fpill on" id="cont-NA" onclick="toggleContinent('NA',this)">🌎 N.America</div>
+          <div class="fpill on" id="cont-SA" onclick="toggleContinent('SA',this)">🌎 S.America</div>
+          <div class="fpill on" id="cont-EU" onclick="toggleContinent('EU',this)">🌍 Europe</div>
+          <div class="fpill on" id="cont-AS" onclick="toggleContinent('AS',this)">🌏 Asia</div>
+          <div class="fpill on" id="cont-OC" onclick="toggleContinent('OC',this)">🌏 Oceania</div>
+          <div class="fpill on" id="cont-ME" onclick="toggleContinent('ME',this)">🕌 Mid East</div>
+          <div class="fpill on" id="cont-AF" onclick="toggleContinent('AF',this)">🌍 Africa</div>
+        </div>
+        <!-- Cities -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="sec" style="margin-bottom:0">Cities</div>
+          <div style="display:flex;gap:5px">
+            <button onclick="selectAllCities(true)"  style="font-size:10px;padding:3px 10px;border-radius:5px;border:0.5px solid var(--border2);background:var(--bg3);color:var(--sky);cursor:pointer">All</button>
+            <button onclick="selectAllCities(false)" style="font-size:10px;padding:3px 10px;border-radius:5px;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer">None</button>
+          </div>
+        </div>
+        <div class="city-chips" id="city-chips"></div>
+      </div>
+
+
+    </div>
+
+
+    <!-- GUIDE -->
+    <div class="panel" id="p-guide">
+
+      <!-- HOW IT WORKS -->
+      <div class="sec">How it works</div>
+      <div class="guide-card">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;margin-bottom:8px">
+          <div style="background:var(--bg3);border-radius:8px;padding:10px 6px;border:0.5px solid var(--border)">
+            <div style="font-size:20px;margin-bottom:4px">🌤️</div>
+            <div style="font-size:10px;font-weight:700;color:var(--sky)">Fetch forecast</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">ECMWF + local model for each city</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px 6px;border:0.5px solid var(--border)">
+            <div style="font-size:20px;margin-bottom:4px">📊</div>
+            <div style="font-size:10px;font-weight:700;color:var(--amber)">Compare prices</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">Find brackets priced below fair value</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px 6px;border:0.5px solid var(--border)">
+            <div style="font-size:20px;margin-bottom:4px">💰</div>
+            <div style="font-size:10px;font-weight:700;color:var(--green)">Signal found</div>
+            <div style="font-size:9px;color:var(--text3);margin-top:2px">Buy the edge, size with Kelly</div>
+          </div>
+        </div>
+        <div class="guide-body">Polymarket sells daily temperature markets — "Will London's high be 32°C?" Each bracket pays $1 if YES. The scanner finds brackets where the price is lower than what the weather models say it should be.</div>
+      </div>
+
+      <!-- RESOLUTION -->
+      <div class="guide-card">
+        <div class="guide-title">How markets resolve</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0">
+          <div style="background:var(--bg3);border-radius:6px;padding:8px;border:0.5px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;color:var(--sky);margin-bottom:4px">🇺🇸 US cities</div>
+            <div style="font-size:9px;color:var(--text2);line-height:1.4">NWS airport station · Fahrenheit · Rounds normally</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;padding:8px;border:0.5px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;color:var(--sky);margin-bottom:4px">🌍 International</div>
+            <div style="font-size:9px;color:var(--text2);line-height:1.4">Wunderground station · Celsius · <strong style="color:var(--sun)">Floor not round</strong> — 29.7°C = 29°C</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNAL TYPES -->
+      <div class="sec" style="margin-top:4px">Signal types</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+        <div style="border:1.5px solid var(--green);border-radius:8px;padding:10px 12px;background:var(--bg2)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700;color:var(--text)">⚡ Guaranteed ARB</span>
+            <span style="font-size:9px;color:var(--green);background:#00ff8815;padding:1px 6px;border-radius:3px;border:0.5px solid var(--green)40">Cost &lt; 100¢</span>
+          </div>
+          <div style="font-size:9px;color:var(--text2);line-height:1.4">3+ adjacent brackets cost less than $1 combined. One MUST resolve YES. <strong style="color:var(--green)">Risk-free profit regardless of temperature.</strong> Act fast — these close quickly.</div>
+        </div>
+        <div style="border:1.5px solid var(--amber);border-radius:8px;padding:10px 12px;background:var(--bg2)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700;color:var(--text)">🎯 Core-3 +EV</span>
+            <span style="font-size:9px;color:var(--amber);background:var(--amber-bg);padding:1px 6px;border-radius:3px;border:0.5px solid var(--amber)40">Cost 100–110¢</span>
+          </div>
+          <div style="font-size:9px;color:var(--text2);line-height:1.4">Buy forecast bracket ±1. Covers a 1-bracket forecast error. Profitable <em>if the forecast is roughly right</em>.</div>
+        </div>
+        <div style="border:1.5px solid var(--sky);border-radius:8px;padding:10px 12px;background:var(--bg2)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700;color:var(--text)">🌡 Single bracket</span>
+            <span style="font-size:9px;color:var(--sky);background:#00b4ff15;padding:1px 6px;border-radius:3px;border:0.5px solid var(--sky)40">Exact match</span>
+          </div>
+          <div style="font-size:9px;color:var(--text2);line-height:1.4">Only the exact forecast bracket. Higher EV per dollar, <strong style="color:var(--red)">zero error tolerance</strong>. Best for high-confidence Today signals only.</div>
+        </div>
+      </div>
+
+      <!-- READING A CARD -->
+      <div class="sec" style="margin-top:4px">Reading a signal card</div>
+
+      <!-- Mock card diagram -->
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;font-size:9px">
+        <!-- Header -->
+        <div style="padding:8px 10px;background:var(--bg2);border-bottom:0.5px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:700;color:var(--text)">London</span>
+            <span style="color:var(--amber);background:var(--amber-bg);padding:1px 5px;border-radius:3px;font-weight:600">+1 day</span>
+            <span style="color:var(--amber);background:var(--amber-bg);padding:1px 5px;border-radius:3px">±1.5°C ensemble</span>
+            <span style="color:var(--green);background:#00ff8815;padding:1px 6px;border-radius:3px;border:0.5px solid #00ff8840;font-weight:700">🟢 High</span>
+          </div>
+          <div style="color:var(--text3)">London 2026-06-27 — 32°C–34°C</div>
+        </div>
+        <!-- Labels -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px 10px;background:var(--bg3);border-bottom:0.5px solid var(--border)">
+          <div>
+            <div style="color:var(--text3);margin-bottom:1px">① Day badge</div>
+            <div style="color:var(--text2)">Today/+1/+2/+3</div>
+          </div>
+          <div>
+            <div style="color:var(--text3);margin-bottom:1px">② Error margin</div>
+            <div style="color:var(--text2)">Ensemble spread ÷ 2</div>
+          </div>
+          <div>
+            <div style="color:var(--text3);margin-bottom:1px">③ Confidence</div>
+            <div style="color:var(--text2)">🟢 High / 🟡 Medium / 🔴 Low</div>
+          </div>
+          <div>
+            <div style="color:var(--text3);margin-bottom:1px">④ Signal type</div>
+            <div style="color:var(--text2)">⚡ ARB / 🎯 +EV / 🌡 Single</div>
+          </div>
+        </div>
+        <!-- Forecast row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:0.5px solid var(--border)">
+          <div style="padding:8px 10px;border-right:0.5px solid var(--border)">
+            <div style="color:var(--text3);font-size:8px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">⑤ Forecast</div>
+            <div style="color:var(--sky);font-size:15px;font-weight:700">33°C</div>
+            <div style="color:var(--text3);margin-top:1px">Raw 34°C → adj. -1°C bias</div>
+            <div style="margin-top:3px;display:inline-flex;gap:4px;align-items:center;background:var(--bg3);border:0.5px solid var(--border);padding:2px 5px;border-radius:4px">
+              <span style="color:var(--text3)">Met Office</span>
+              <span style="color:var(--sky);font-weight:600">33°C</span>
+              <span style="color:var(--green)">· Δ0.2°C</span>
+            </div>
+          </div>
+          <div style="padding:8px 10px">
+            <div style="color:var(--text3);font-size:8px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">⑥ Combined cost</div>
+            <div style="color:var(--amber);font-size:15px;font-weight:700">73¢ total</div>
+            <div style="color:var(--text3);margin-top:1px">3 brackets (−1 · exact · +1)</div>
+          </div>
+        </div>
+        <!-- Accuracy bar -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:0.5px solid var(--border);background:var(--bg3)">
+          <div style="padding:5px 8px;border-right:0.5px solid var(--border)">
+            <div style="color:var(--text3);font-size:7px;text-transform:uppercase">⑦ Avg error</div>
+            <div style="color:var(--green);font-weight:700;font-size:11px">±0.8°C</div>
+          </div>
+          <div style="padding:5px 8px;border-right:0.5px solid var(--border)">
+            <div style="color:var(--text3);font-size:7px;text-transform:uppercase">Bias</div>
+            <div style="color:var(--amber);font-weight:600;font-size:10px">-1°C cold</div>
+          </div>
+          <div style="padding:5px 8px;border-right:0.5px solid var(--border)">
+            <div style="color:var(--text3);font-size:7px;text-transform:uppercase">Within 1°C</div>
+            <div style="color:var(--green);font-weight:700;font-size:11px">78%</div>
+          </div>
+          <div style="padding:5px 8px">
+            <div style="color:var(--text3);font-size:7px;text-transform:uppercase">Days</div>
+            <div style="color:var(--text2);font-weight:700;font-size:11px">14</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-card">
+        <div class="guide-title">① Day badge — forecast horizon</div>
+        <div class="guide-body"><span style="color:var(--green);font-weight:600">Today</span> = most reliable. <span style="color:var(--amber);font-weight:600">+1</span> = still good. <span style="color:var(--sky);font-weight:600">+2</span> = moderate uncertainty. <span style="color:var(--text3);font-weight:600">+3</span> = use wider bracket only.</div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">② Error margin — model uncertainty</div>
+        <div class="guide-body"><span style="color:var(--amber)">±1.5°C ensemble</span> = the 50 ECMWF model runs span ±1.5°C around the forecast. The Core-3 bracket covers this. When it shows <span style="color:var(--amber)">±4°F</span> (no ensemble) it's a fixed estimate — less precise.</div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">③ Confidence pill — should you trade?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0">
+          <div style="text-align:center;background:var(--bg3);border-radius:6px;padding:8px;border:0.5px solid #00ff8840">
+            <div style="font-size:16px">🟢</div>
+            <div style="font-size:10px;font-weight:700;color:var(--green);margin:3px 0">High</div>
+            <div style="font-size:8px;color:var(--text3)">ARB or strong accuracy + models agree</div>
+          </div>
+          <div style="text-align:center;background:var(--bg3);border-radius:6px;padding:8px;border:0.5px solid var(--amber)40">
+            <div style="font-size:16px">🟡</div>
+            <div style="font-size:10px;font-weight:700;color:var(--amber);margin:3px 0">Medium</div>
+            <div style="font-size:8px;color:var(--text3)">Good signal but some uncertainty</div>
+          </div>
+          <div style="text-align:center;background:var(--bg3);border-radius:6px;padding:8px;border:0.5px solid #ff444440">
+            <div style="font-size:16px">🔴</div>
+            <div style="font-size:10px;font-weight:700;color:var(--red);margin:3px 0">Low</div>
+            <div style="font-size:8px;color:var(--text3)">Models disagree or high error rate</div>
+          </div>
+        </div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">⑤ Forecast — bias corrected</div>
+        <div class="guide-body">The big number is the <strong>bias-corrected</strong> forecast — what we actually target. "Raw 34°C → adj. -1°C bias" means ECMWF said 34°C but over the last 14 days it's run 1°C warm for this city, so we target 33°C. Below it, the <strong style="color:var(--sky)">local model chip</strong> (Met Office / JMA / DWD etc.) shows what the national weather service says. <strong style="color:var(--green)">Δ &lt; 1°C</strong> = models agree = higher confidence.</div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-title">⑦ Accuracy bar — 14-day model track record</div>
+        <div class="guide-body"><strong>Avg error</strong>: typical miss size (🟢 &lt;1°C, 🟡 1–2°C, 🔴 &gt;2°C). <strong>Bias</strong>: systematic warm/cold tendency — if large, the correction is already applied to the forecast. <strong>Within 1°C</strong>: % of days the model was within 1°C of actual (🟢 ≥70%, 🟡 50–70%, 🔴 &lt;50%).</div>
+      </div>
+
+      <!-- BRACKET TABLE -->
+      <div class="sec" style="margin-top:4px">Bracket table</div>
+      <div class="guide-card">
+        <div class="guide-body" style="margin-bottom:8px">Each row is one temperature bracket. You buy the <strong>same number of shares</strong> in each — but spend <strong>different $ amounts</strong> because prices differ. When one resolves YES it pays <strong style="color:var(--green)">$1 per share</strong>.</div>
+        <div style="background:var(--bg3);border-radius:6px;overflow:hidden;border:0.5px solid var(--border);font-size:10px">
+          <div style="display:grid;grid-template-columns:1fr 60px 70px 60px;gap:0;padding:5px 10px;border-bottom:0.5px solid var(--border);color:var(--text3);font-size:8px;text-transform:uppercase;letter-spacing:.05em">
+            <div>Bracket</div><div style="text-align:center">Price</div><div style="text-align:center">Buy $</div><div style="text-align:right">Shares</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 60px 70px 60px;gap:0;padding:6px 10px;border-bottom:0.5px solid var(--border);color:var(--text2)">
+            <div>32°C</div><div style="text-align:center;color:var(--amber)">27¢</div><div style="text-align:center;color:var(--green)">$18.00</div><div style="text-align:right">66.7</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 60px 70px 60px;gap:0;padding:6px 10px;border-bottom:0.5px solid var(--border);background:#00b4ff08">
+            <div style="color:var(--sky)">→ 33°C</div><div style="text-align:center;color:var(--amber)">18¢</div><div style="text-align:center;color:var(--green)">$12.00</div><div style="text-align:right;color:var(--text)">66.7</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 60px 70px 60px;gap:0;padding:6px 10px;color:var(--text2)">
+            <div>34°C</div><div style="text-align:center;color:var(--amber)">28¢</div><div style="text-align:center;color:var(--green)">$18.67</div><div style="text-align:right">66.7</div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:var(--text3);margin-top:6px">→ marks the bracket the forecast lands in · Same shares, different $ because prices differ</div>
+      </div>
+
+      <!-- KELLY -->
+      <div class="sec" style="margin-top:4px">Position sizing</div>
+      <div class="guide-card">
+        <div class="guide-title">Kelly criterion</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0">
+          <div style="background:var(--bg3);border-radius:6px;padding:8px;border:0.5px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:4px">Full Kelly (1.0)</div>
+            <div style="font-size:9px;color:var(--text2)">Max long-run growth. Very high variance — large drawdowns possible.</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;padding:8px;border:0.5px solid var(--green)40">
+            <div style="font-size:10px;font-weight:700;color:var(--green);margin-bottom:4px">¼ Kelly (0.25) ✓</div>
+            <div style="font-size:9px;color:var(--text2)">75% of max growth. Much smoother. <strong>Default and recommended.</strong></div>
+          </div>
+        </div>
+        <div class="guide-body">Set your bet size in <strong>Settings</strong>. This fixed amount is split across all brackets proportionally — you buy the same number of shares in each bucket. For guaranteed ARBs, any size is correct since there's no risk. Check liquidity before large orders.</div>
+      </div>
+
+      <!-- FORECASTS TAB -->
+      <div class="sec" style="margin-top:4px">Forecasts tab</div>
+      <div class="guide-card">
+        <div class="guide-title">What's shown per city</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:9px">
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--sky);min-width:80px;font-weight:600">5-day strip</span><span style="color:var(--text2)">Temperature forecast with ensemble spread (±) in amber</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--sky);min-width:80px;font-weight:600">Accuracy block</span><span style="color:var(--text2)">Last 14 days — actual vs forecast, error per day colour-coded</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--sky);min-width:80px;font-weight:600">Local model</span><span style="color:var(--text2)">JMA / Met Office / DWD / BOM — national weather service for that country</span></div>
+        </div>
+      </div>
+
+      <div class="notice-box" style="margin-top:10px"><strong style="color:var(--text2)">Disclaimer:</strong> This tool surfaces statistical patterns only. Forecasts are uncertain. Markets may already reflect the same forecast. All trades involve real risk of loss. This is research, not financial advice.</div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="p-settings">
+      <div class="scard">
+        <div class="scard-t">Position sizing</div>
+        <div class="field">
+          <div class="flbl">Bet per signal ($) — split equally across all brackets by shares</div>
+          <input class="fin" id="bet-size" type="number" placeholder="25" min="1" step="1"/>
+        </div>
+        <button class="save-btn" onclick="saveSizing()">Save</button>
+      </div>
+      <div class="scard">
+        <div class="scard-t">Telegram alerts</div>
+        <div class="field"><div class="flbl">Bot token — from @BotFather</div><input class="fin" id="tg-token" type="password" placeholder="1234567890:ABCdef…"/></div>
+        <div class="field"><div class="flbl">Chat ID — from @userinfobot</div><input class="fin" id="tg-chat" type="text" placeholder="-100123456789"/></div>
+        <div class="tog-row" style="border-top:none;padding-top:0">
+          <div class="tog-lbl">Alert on guaranteed arbs</div>
+          <div class="tog" id="tog-arb" onclick="this.classList.toggle('on');saveAlertPrefs()"><div class="tog-k"></div></div>
+        </div>
+        <div class="tog-row">
+          <div class="tog-lbl">Alert on high-confidence signals</div>
+          <div class="tog" id="tog-wx-alert" onclick="this.classList.toggle('on');saveAlertPrefs()"><div class="tog-k"></div></div>
+        </div>
+        <button class="save-btn" onclick="saveTg()">Save</button>
+        <div style="font-size:9px;color:var(--text3);margin-top:8px;line-height:1.5">Alerts fire on each scan (manual or auto) when new matching signals appear. Requires a valid bot token + chat ID.</div>
+      </div>
+      <div class="scard">
+        <div class="scard-t">Scanner options</div>
+        <div class="tog-row" style="border-top:none;padding-top:0">
+          <div class="tog-lbl">Auto-scan every 5 min</div>
+          <div class="tog" id="tog-auto" onclick="toggleAuto(this)"><div class="tog-k"></div></div>
+        </div>
+      </div>
+      <div class="notice-box"><strong style="color:var(--text2)">Disclaimer:</strong> This tool surfaces statistical patterns. It does not predict outcomes. All trades involve real risk of loss. This is research, not financial advice.</div>
+    </div>
+
+  </div>
+
+  <div class="nav">
+    <button class="nb active" id="nav-weather" onclick="goTab('weather')">
+      <svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>Weather
+    </button>
+    <button class="nb" id="nav-cities" onclick="goTab('cities')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Forecasts
+    </button>
+    <button class="nb" id="nav-scanner" onclick="goTab('scanner')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Scanner
+    </button>
+    <button class="nb" id="nav-guide" onclick="goTab('guide')">
+      <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Guide
+    </button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   SHARED API LAYER — tries direct then 3 proxies in order
+   ============================================================ */
+const PM_GAMMA = 'https://gamma-api.polymarket.com';
+const PM_DATA  = 'https://data-api.polymarket.com';
+const PROXIES  = [
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://thingproxy.freeboard.io/fetch/${u}`,
+];
+
+async function tryFetch(url) {
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json' }, mode: 'cors' });
+    if (r.ok) return JSON.parse(await r.text());
+  } catch {}
+  for (const p of PROXIES) {
+    try {
+      const r = await fetch(p(url), { headers: { Accept: 'application/json' } });
+      if (!r.ok) continue;
+      const txt = await r.text();
+      try { const w = JSON.parse(txt); return w?.contents ? JSON.parse(w.contents) : w; } catch { return JSON.parse(txt); }
+    } catch {}
+  }
+  return null;
+}
+
+async function fetchMarkets(limit) {
+  let d = await tryFetch(`${PM_GAMMA}/markets?active=true&closed=false&limit=${limit}&order=volume&ascending=false`);
+  if (d) { const a = Array.isArray(d) ? d : (d.data || d.markets || []); if (a.length) return a; }
+  d = await tryFetch(`${PM_DATA}/markets?active=true&closed=false&limit=${limit}&sortBy=volumeClob&sortDirection=DESC`);
+  return d ? (Array.isArray(d) ? d : (d.data || d.markets || [])) : [];
+}
+
+async function fetchNWSForecast(city) {
+  const dm = {}, h = {'User-Agent':'pm-scanner/1.0'};
+  const todayStr = new Date().toISOString().slice(0,10);
+  const now      = new Date();
+
+  /* City timezones for correct local-calendar daily max */
+  const tzMap = {
+    'KLGA':'America/New_York', 'KORD':'America/Chicago',
+    'KMIA':'America/New_York', 'KDAL':'America/Chicago',
+    'KSEA':'America/Los_Angeles','KATL':'America/New_York',
+    'KLAX':'America/Los_Angeles','KHOU':'America/Chicago',
+    'KPHX':'America/Phoenix',  'KBKF':'America/Denver',
+    'KBOS':'America/New_York', 'KLAS':'America/Los_Angeles',
+    'KIAD':'America/New_York', 'KSFO':'America/Los_Angeles',
+    'KMSP':'America/Chicago',  'KMSY':'America/Chicago',
+  };
+  const tz = tzMap[city.station] || 'America/New_York';
+
+  /* 30 days back for a stable accuracy sample */
+  const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+  const thirtyDaysStr  = thirtyDaysAgo.toISOString().slice(0,10);
+  const yesterday      = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yestStr        = yesterday.toISOString().slice(0,10);
+
+  /* Run NWS + Open-Meteo calls in parallel.
+     Key change: use Open-Meteo *forecast archive* (genuine day-1 forecasts as issued)
+     instead of past_days (which returns a current-model hindcast — not real forecast error). */
+  const [obsResult, fcResult, archResult, omFcArcResult] = await Promise.allSettled([
+    /* NWS station observations — last 30 days for ground truth */
+    fetch(`https://api.weather.gov/stations/${city.station}/observations?limit=720`,
+      {headers:h, signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+    /* NWS hourly forecast — future days */
+    fetch(`https://api.weather.gov/gridpoints/${city.nwsGrid}/forecast/hourly`,
+      {headers:h, signal:AbortSignal.timeout(8000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+    /* Open-Meteo ERA5 archive — fallback actuals if NWS obs thin */
+    fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&start_date=${thirtyDaysStr}&end_date=${yestStr}&timezone=${encodeURIComponent(tz)}`,
+      {signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+    /* Open-Meteo forecast with past_days=30 — model's predictions for each past date.
+       past_days is the correct param; start_date/end_date is not supported on /v1/forecast. */
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&past_days=30&forecast_days=1&timezone=${encodeURIComponent(tz)}`,
+      {signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+  ]);
+
+  /* ── NWS station observations → daily max in °F ── */
+  const obsData = obsResult.status==='fulfilled' ? obsResult.value : null;
+  const stationActualsF = {}; /* date → daily max °F from the actual resolution station */
+  if (obsData) {
+    for (const o of (obsData.features||[])) {
+      const ts=o.properties?.timestamp?.slice(0,10), tC=o.properties?.temperature?.value;
+      if (ts&&tC!=null){
+        const tF=Math.round(tC*9/5+32);
+        if(!stationActualsF[ts]||tF>stationActualsF[ts]) stationActualsF[ts]=tF;
+        /* Also populate dm for past readings */
+        if(!dm[ts]||tF>dm[ts]) dm[ts]=tF;
+      }
+    }
+  }
+
+  /* ── NWS hourly forecast → future days ── */
+  const fcData = fcResult.status==='fulfilled' ? fcResult.value : null;
+  if (fcData) {
+    for (const p of (fcData.properties?.periods||[])) {
+      const ts=p.startTime?.slice(0,10); let t=p.temperature;
+      if (p.temperatureUnit==='C') t=Math.round(t*9/5+32);
+      if (ts&&t!=null&&ts>=todayStr){if(!dm[ts]||t>dm[ts])dm[ts]=t;}
+    }
+  }
+
+  /* ── ERA5 archive → fallback actuals ── */
+  const archData = archResult.status==='fulfilled' ? archResult.value : null;
+  const era5ActualsF = {};
+  if (archData) {
+    (archData.daily?.time||[]).forEach((t,i) => {
+      const v=archData.daily.temperature_2m_max?.[i];
+      if (v!=null && t<todayStr) {
+        era5ActualsF[t] = Math.round(v*9/5+32);
+        /* Use as dm fallback for past days where station obs missing */
+        if (!dm[t]) dm[t] = era5ActualsF[t];
+      }
+    });
+  }
+
+  /* ── Genuine day-1 forecast history from OM forecast archive ── */
+  const omFcArcData = omFcArcResult.status==='fulfilled' ? omFcArcResult.value : null;
+  const fcIssuedF = {}; /* date → what ECMWF predicted for that date, day-1 */
+  if (omFcArcData) {
+    (omFcArcData.daily?.time||[]).forEach((t,i) => {
+      const v=omFcArcData.daily.temperature_2m_max?.[i];
+      if (v!=null) fcIssuedF[t]=Math.round(v*9/5+32);
+    });
+  }
+
+  /* ── Accuracy: prefer NWS station obs as ground truth; fall back to ERA5 ──
+     Using station obs when available gives the truest forecast error because
+     Polymarket resolves on those exact station readings. */
+  const stationDays = Object.keys(stationActualsF).filter(d => d < todayStr).length;
+  const useStation  = stationDays >= 10; /* enough obs to trust */
+  const actuals     = useStation ? stationActualsF : era5ActualsF;
+
+  console.log(`[US Acc ${city.name}] stationDays=${stationDays} useStation=${useStation} fcArcDays=${Object.keys(fcIssuedF).length}`);
+
+  const errors=[],absErrs=[],accDays=[];
+  Object.keys(actuals).sort().forEach(date => {
+    if (date >= todayStr) return;
+    const actual    = actuals[date];
+    const predicted = fcIssuedF[date];
+    if (actual==null||predicted==null) return;
+    const err=Math.round((predicted-actual)*10)/10;
+    errors.push(err); absErrs.push(Math.abs(err));
+    accDays.push({date, actual, forecast:predicted, error:err});
+  });
+
+  console.log(`[US Acc ${city.name}] matched=${accDays.length} source=${useStation?'NWS-obs':'ERA5'}`);
+
+  if (errors.length>=5) { /* require 5+ days for a stable estimate */
+    const mae     = Math.round(absErrs.reduce((s,v)=>s+v,0)/absErrs.length*10)/10;
+    const bias    = Math.round(errors.reduce((s,v)=>s+v,0)/errors.length*10)/10;
+    /* within2F = % of days where |error| ≤ 2°F; within4F = ≤ 4°F */
+    const within2F = Math.round(absErrs.filter(e=>e<=2).length/absErrs.length*100);
+    const within4F = Math.round(absErrs.filter(e=>e<=4).length/absErrs.length*100);
+    /* Bias cap: only apply if |bias| > 0.5 × MAE (signal not dominated by noise) */
+    const biasMeaningful = Math.abs(bias) > mae * 0.5 && Math.abs(bias) >= 1;
+    dm['_modelAccuracy']={
+      days: errors.length, mae, bias,
+      maxErr: Math.round(Math.max(...absErrs)*10)/10,
+      within2F, within4F,
+      /* expose as within1/within2 for confidence score compat (within1 = within2°F) */
+      within1: within2F, within2: within4F,
+      recent: accDays.slice(-7),
+      isFallback: false, unit:'°F',
+      source: useStation ? 'NWS station obs' : 'ERA5 reanalysis',
+      biasMeaningful,
+    };
+    console.log(`[US Acc ${city.name}] MAE=${mae}°F bias=${bias>0?'+':''}${bias}°F within2F=${within2F}% src=${useStation?'NWS':'ERA5'} biasMeaningful=${biasMeaningful}`);
+    /* Apply bias correction only when it's statistically meaningful */
+    if (biasMeaningful) {
+      const capBias = bias > 0 ? Math.min(bias, mae) : Math.max(bias, -mae);
+      Object.keys(dm).forEach(t => {
+        if (t >= todayStr && typeof dm[t] === 'number') dm[t] = Math.round(dm[t] - capBias);
+      });
+    }
+  }
+
+  /* Store NWS forecast temps as _localForecast so signal cards can show them */
+  const nwsFcTemps = {};
+  Object.keys(dm).forEach(date => {
+    if (date >= todayStr && typeof dm[date] === 'number') {
+      nwsFcTemps[date] = dm[date]; /* °F */
+    }
+  });
+  if (Object.keys(nwsFcTemps).length > 0) {
+    dm['_localForecast'] = { model: 'nws', temps: nwsFcTemps, unit: '°F' };
+    dm['_modelDisagreement'] = null;
+  }
+
+  return dm;
+}
+
+async function fetchNOAAIntlForecast(city) {
+  /* Used for international cities that Polymarket resolves via NOAA weather.gov:
+     Istanbul (LTFM), Moscow (UUWW), Tel Aviv (LLBG).
+     We fetch the standard NOAA observations+forecast just like US cities,
+     but temperatures are in Celsius on Polymarket's resolution page.
+     Returns same shape as fetchNWSForecast — keyed by date string, values in °F
+     so the rest of the pipeline (bucket matching in °C) stays consistent. */
+  const dm = {}, h = {'User-Agent':'pm-scanner/1.0'};
+  const todayStr = new Date().toISOString().slice(0,10);
+  const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate()-14);
+  const twoWeeksStr = twoWeeksAgo.toISOString().slice(0,10);
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yestStr = yesterday.toISOString().slice(0,10);
+
+  /* Fetch NOAA observation page via proxy — weather.gov international observations
+     are available at /stations/{ICAO}/observations */
+  const [obsResult, archResult, omFcResult, omFcFutResult] = await Promise.allSettled([
+    /* NOAA station observations */
+    fetch(`https://api.weather.gov/stations/${city.station}/observations?limit=48`,
+      {headers:h, signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+    /* Archive actuals */
+    fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&start_date=${twoWeeksStr}&end_date=${yestStr}&timezone=auto`,
+      {signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+    /* OM forecast history via past_days=30 */
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&past_days=30&forecast_days=1&timezone=auto`,
+      {signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+    /* OM ECMWF future forecast + ensemble */
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max,precipitation_probability_max&forecast_days=7&timezone=auto`,
+      {signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).catch(()=>null),
+  ]);
+
+  /* Process NOAA observations for recent actuals */
+  const obsData = obsResult.status==='fulfilled' ? obsResult.value : null;
+  const noaaActuals = {};
+  let noaaWorking = false;
+  if (obsData?.features?.length) {
+    noaaWorking = true;
+    for (const obs of (obsData.features||[])) {
+      const ts = obs.properties?.timestamp?.slice(0,10);
+      const tC = obs.properties?.temperature?.value;
+      if (ts && tC != null) {
+        if (!noaaActuals[ts] || tC > noaaActuals[ts]) noaaActuals[ts] = tC;
+      }
+    }
+  }
+  console.log(`[NOAA Intl ${city.name}] NOAA working=${noaaWorking} obs days=${Object.keys(noaaActuals).length}`);
+
+  /* Future forecast from Open-Meteo (primary) */
+  const omFutData = omFcFutResult.status==='fulfilled' ? omFcFutResult.value : null;
+  if (omFutData) {
+    (omFutData.daily?.time||[]).forEach((t,i) => {
+      const tC = omFutData.daily.temperature_2m_max?.[i];
+      if (tC != null && t >= todayStr) {
+        /* Store as {tempC, rainPct} shape — consistent with international cities */
+        dm[t] = {
+          tempC: Math.round(tC*10)/10,
+          rainPct: omFutData.daily.precipitation_probability_max?.[i] ?? null,
+          spreadC: null, biasC: null,
+        };
+      }
+    });
+  }
+
+  /* Archive actuals for accuracy */
+  const archData = archResult.status==='fulfilled' ? archResult.value : null;
+  const omActuals = {};
+  if (archData) {
+    (archData.daily?.time||[]).forEach((t,i) => {
+      const v = archData.daily.temperature_2m_max?.[i];
+      if (v != null) omActuals[t] = v;
+    });
+    dm['_actuals'] = omActuals;
+  }
+
+  /* Historical forecast for accuracy */
+  const omFcData = omFcResult.status==='fulfilled' ? omFcResult.value : null;
+  const fcHist = {};
+  if (omFcData) {
+    (omFcData.daily?.time||[]).forEach((t,i) => {
+      const v = omFcData.daily.temperature_2m_max?.[i];
+      if (v != null) fcHist[t] = v;
+    });
+  }
+
+  /* Compute accuracy: prefer NOAA actuals when available, else OM archive */
+  const actuals = noaaWorking && Object.keys(noaaActuals).length >= 5 ? noaaActuals : omActuals;
+  const errors=[], absErrs=[], accDays=[];
+  Object.keys(actuals).sort().forEach(date => {
+    if (date >= todayStr) return;
+    const actual = actuals[date];
+    const fc1d   = fcHist[date];
+    if (actual == null || fc1d == null) return;
+    const err = Math.round((fc1d - actual) * 10) / 10;
+    errors.push(err); absErrs.push(Math.abs(err));
+    accDays.push({date, actual: Math.round(actual*10)/10, forecast: Math.round(fc1d*10)/10, error: err});
+  });
+
+  if (errors.length >= 3) {
+    const mae    = Math.round(absErrs.reduce((s,v)=>s+v,0)/absErrs.length*10)/10;
+    const bias   = Math.round(errors.reduce((s,v)=>s+v,0)/errors.length*10)/10;
+    const within1= Math.round(absErrs.filter(e=>e<=1).length/absErrs.length*100);
+    const within2= Math.round(absErrs.filter(e=>e<=2).length/absErrs.length*100);
+    const biasMeaningful = Math.abs(bias) > mae * 0.5 && Math.abs(bias) >= 0.3;
+    /* Store when: data looks real (mae > 0.1) OR bias is meaningful enough to show.
+       The old within1 < 99 guard was suppressing valid accuracy data for well-forecast cities. */
+    if (mae > 0.1 || biasMeaningful) {
+      dm['_modelAccuracy'] = {
+        days: errors.length, mae, bias,
+        maxErr: Math.round(Math.max(...absErrs)*10)/10,
+        within1, within2,
+        recent: accDays.slice(-5),
+        isFallback: false, unit: '°C',
+        source: noaaWorking ? 'NOAA+OM' : 'OM',
+        biasMeaningful,
+      };
+    }
+    const capBias = bias > 0 ? Math.min(bias, mae) : Math.max(bias, -mae);
+    if (biasMeaningful) {
+      Object.keys(dm).forEach(t => {
+        if (t >= todayStr && dm[t]?.tempC != null) dm[t].biasC = capBias;
+      });
+    }
+    console.log(`[NOAA Intl ${city.name}] MAE=${mae}°C bias=${bias}°C within1=${within1}% biasMeaningful=${biasMeaningful} source=${noaaWorking?'NOAA':'OM'}`);
+  }
+
+  /* NOAA source label for UI */
+  dm['_noaaWorking'] = noaaWorking;
+  dm['_localForecast'] = noaaWorking ? { model: 'noaa_intl', temps: (() => {
+    const t = {};
+    Object.keys(noaaActuals).forEach(d => { if (d < todayStr) t[d] = noaaActuals[d]; });
+    return t;
+  })() } : null;
+
+  return dm;
+}
+
+async function fetchOpenMeteoFc(city) {
+  const out = {};
+  const todayStr  = new Date().toISOString().slice(0,10);
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yestStr   = yesterday.toISOString().slice(0,10);
+  const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate()-30);
+  const twoWeeksStr = twoWeeksAgo.toISOString().slice(0,10);
+
+  /* ── Local model endpoint mapping ──
+     Each national weather service has its own Open-Meteo endpoint.
+     Generic /v1/forecast?models= works for some (DWD, Météo-France, CMA, KMA)
+     but JMA, BOM, and UK Met Office have dedicated endpoints. */
+  const localModelStr = city.localModel || null;
+  const localModelEndpoints = {
+    'uk_met_office_um':    'https://api.open-meteo.com/v1/ukmo',
+    'jma_seamless':        'https://api.open-meteo.com/v1/jma',
+    'bom_access_global':   'https://api.open-meteo.com/v1/bom',
+    'kma_seamless':        'https://api.open-meteo.com/v1/kma',
+    'meteofrance_seamless':'https://api.open-meteo.com/v1/meteofrance',
+    'icon_seamless':       'https://api.open-meteo.com/v1/dwd-icon',
+    'cma_grapes_global':   'https://api.open-meteo.com/v1/cma',
+  };
+  const localEndpoint = localModelStr ? (localModelEndpoints[localModelStr] || 'https://api.open-meteo.com/v1/forecast') : null;
+  const localModelParam = localModelStr && !localModelEndpoints[localModelStr] ? `&models=${localModelStr}` : '';
+  const [fcResult, ensResult, archResult, fcHistResult, localResult] = await Promise.allSettled([
+
+    /* 1. ECMWF deterministic forecast (primary) */
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max,precipitation_probability_max&forecast_days=7&timezone=auto`,
+      {signal:AbortSignal.timeout(10000)}
+    ).then(r => r.ok ? r.json() : null).catch(() => null),
+
+    /* 2. Ensemble spread */
+    fetch(
+      `https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&forecast_days=7&timezone=auto&models=ecmwf_ifs025`,
+      {signal:AbortSignal.timeout(12000)}
+    ).then(r => r.ok ? r.json() : null).catch(e => { console.log('[Ensemble]', e.message); return null; }),
+
+    /* 3. Archive actuals — station-based observed temperatures, no model */
+    fetch(
+      `https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&start_date=${twoWeeksStr}&end_date=${yestStr}&timezone=auto`,
+      {signal:AbortSignal.timeout(10000)}
+    ).then(r => r.ok ? r.json() : null).catch(e => { console.log('[Archive]', e.message); return null; }),
+
+    /* 4. ECMWF forecast history via past_days — returns the model's predictions
+       for each of the last 30 days. This is the correct way to get past forecast
+       data from Open-Meteo; start_date/end_date is not supported on /v1/forecast. */
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&past_days=30&forecast_days=1&timezone=auto`,
+      {signal:AbortSignal.timeout(10000)}
+    ).then(r => r.ok ? r.json() : null).catch(e => { console.log('[FcArc]', e.message); return null; }),
+
+    /* 5. Local model — dedicated endpoint per national weather service */
+    localEndpoint ? fetch(
+      `${localEndpoint}?latitude=${city.lat}&longitude=${city.lon}` +
+      `&daily=temperature_2m_max&forecast_days=7&timezone=auto${localModelParam}`,
+      {signal:AbortSignal.timeout(10000)}
+    ).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
+  ]);
+
+  /* ── Process deterministic forecast ── */
+  const fcData = fcResult.status === 'fulfilled' ? fcResult.value : null;
+  if (fcData) {
+    (fcData.daily?.time||[]).forEach((t,i) => {
+      out[t] = {
+        tempC:   fcData.daily.temperature_2m_max?.[i],
+        rainPct: fcData.daily.precipitation_probability_max?.[i],
+        spreadC: null,
+        biasC:   null,
+      };
+    });
+  }
+
+  /* ── Process ensemble spread ── */
+  const ensData = ensResult.status === 'fulfilled' ? ensResult.value : null;
+  if (ensData) {
+    const times = ensData.daily?.time || [];
+
+    /* Try mean/spread fields first (ensemble mean API) */
+    const spreadKey = Object.keys(ensData.daily||{}).find(k => k.includes('_spread') || k.includes('_std'));
+    const meanKey   = Object.keys(ensData.daily||{}).find(k => k.includes('_mean'));
+
+    if (spreadKey) {
+      /* Direct spread field available */
+      times.forEach((t, i) => {
+        const spread = ensData.daily[spreadKey]?.[i];
+        if (spread != null) {
+          if (out[t]) out[t].spreadC = Math.round(spread * 10) / 10;
+        }
+      });
+    } else {
+      /* Fall back to computing spread from individual members */
+      const memberKeys = Object.keys(ensData.daily||{}).filter(k =>
+        k.startsWith('temperature_2m_max_member') || k.match(/temperature_2m_max_\d+/)
+      );
+      if (memberKeys.length > 0) {
+        times.forEach((t, i) => {
+          const vals = memberKeys
+            .map(k => ensData.daily[k]?.[i])
+            .filter(v => v != null)
+            .sort((a,b) => a-b);
+          if (vals.length >= 5) {
+            const p10    = vals[Math.floor(vals.length * 0.10)];
+            const p90    = vals[Math.floor(vals.length * 0.90)];
+            const spread = Math.round((p90 - p10) * 10) / 10;
+            if (out[t]) out[t].spreadC = spread;
+          }
+        });
+      }
+    }
+    console.log(`[Ensemble ${city.name}] keys: ${Object.keys(ensData.daily||{}).slice(0,4).join(', ')}...`);
+  }
+
+  /* ── Process archive actuals ── */
+  const archData = archResult.status === 'fulfilled' ? archResult.value : null;
+  const actuals  = {};
+  if (archData) {
+    (archData.daily?.time||[]).forEach((t,i) => {
+      const v = archData.daily.temperature_2m_max?.[i];
+      if (v != null) actuals[t] = v;
+    });
+    out['_actuals'] = actuals;
+    if (actuals[yestStr] != null) out['_yesterdayActualC'] = actuals[yestStr];
+  }
+
+  /* ── Process forecast history and compute accuracy ── */
+  const fcHistData = fcHistResult.status === 'fulfilled' ? fcHistResult.value : null;
+  const fcHist     = {};
+  if (fcHistData) {
+    (fcHistData.daily?.time||[]).forEach((t,i) => {
+      const v = fcHistData.daily.temperature_2m_max?.[i];
+      if (v != null) fcHist[t] = v;
+    });
+  }
+
+  /* Match archive actuals against genuine forecast-archive to get real errors */
+  const errors = [], absErrs = [], days = [];
+  Object.keys(actuals).sort().forEach(date => {
+    if (date >= todayStr) return; /* skip today/future */
+    const actual = actuals[date];
+    const fc1d   = fcHist[date];
+    if (actual == null || fc1d == null) return;
+    const err = Math.round((fc1d - actual) * 10) / 10;
+    errors.push(err);
+    absErrs.push(Math.abs(err));
+    days.push({ date, actual: Math.round(actual*10)/10, forecast: Math.round(fc1d*10)/10, error: err });
+  });
+
+  console.log(`[Accuracy ${city.name}] matched=${days.length} archive=${Object.keys(actuals).length} fcArc=${Object.keys(fcHist).length}`);
+
+  if (errors.length >= 5) { /* require 5+ days for a stable estimate */
+    const mae    = Math.round(absErrs.reduce((s,v)=>s+v,0) / absErrs.length * 10) / 10;
+    const bias   = Math.round(errors.reduce((s,v)=>s+v,0) / errors.length * 10) / 10;
+    const within1= Math.round(absErrs.filter(e=>e<=1).length / absErrs.length * 100);
+    const within2= Math.round(absErrs.filter(e=>e<=2).length / absErrs.length * 100);
+    /* Bias cap: only apply when signal exceeds noise (|bias| > 0.5 × MAE and >= 0.3°C) */
+    const biasMeaningful = Math.abs(bias) > mae * 0.5 && Math.abs(bias) >= 0.3;
+    console.log(`[Accuracy ${city.name}] MAE=${mae}°C bias=${bias>0?'+':''}${bias}°C within1=${within1}% biasMeaningful=${biasMeaningful}`);
+    /* Store when: data looks real (mae > 0.1) OR bias is meaningful.
+       The old 'within1 < 99' guard suppressed valid data for well-forecast cities —
+       exactly the case where a persistent bias matters most. */
+    if (mae > 0.1 || biasMeaningful) {
+      out['_modelAccuracy'] = {
+        days: errors.length, mae, bias,
+        maxErr: Math.round(Math.max(...absErrs)*10)/10,
+        within1, within2,
+        recent: days.slice(-7),
+        isFallback: false, unit: '°C',
+        biasMeaningful,
+      };
+    }
+    /* Apply bias correction only when statistically meaningful, capped at MAE */
+    if (biasMeaningful) {
+      const capBias = bias > 0 ? Math.min(bias, mae) : Math.max(bias, -mae);
+      Object.keys(out).forEach(t => {
+        if (t > todayStr && out[t]?.tempC != null) out[t].biasC = capBias;
+      });
+    }
+  }
+
+  /* ── Local model forecast (JMA, DWD, BOM, KMA etc.) ── */
+  const localData = localResult?.status === 'fulfilled' ? localResult.value : null;
+  console.log(`[Local ${city.name}] status=${localResult?.status} data=${!!localData} model=${localModelStr} endpoint=${localEndpoint}`);
+
+  /* If local model failed, try DWD ICON as universal fallback for non-US cities */
+  let effectiveLocalData = localData;
+  let effectiveLocalModel = localModelStr;
+  if (!localData && localModelStr && localModelStr !== 'icon_seamless') {
+    try {
+      const fallbackR = await fetch(
+        `https://api.open-meteo.com/v1/dwd-icon?latitude=${city.lat}&longitude=${city.lon}` +
+        `&daily=temperature_2m_max&forecast_days=7&timezone=auto`,
+        {signal: AbortSignal.timeout(8000)});
+      if (fallbackR.ok) {
+        effectiveLocalData = await fallbackR.json();
+        effectiveLocalModel = 'icon_seamless';
+        console.log(`[Local ${city.name}] Fell back to DWD ICON`);
+      }
+    } catch(e) { console.log(`[Local ${city.name}] Fallback also failed:`, e.message); }
+  }
+
+  if (effectiveLocalData && effectiveLocalModel) {
+    const localTemps = {};
+    (effectiveLocalData.daily?.time||[]).forEach((t,i) => {
+      const v = effectiveLocalData.daily.temperature_2m_max?.[i];
+      if (v != null) localTemps[t] = Math.round(v * 10) / 10;
+    });
+    console.log(`[Local ${city.name}] ${effectiveLocalModel} dates: ${Object.keys(localTemps).join(', ')}`);
+    out['_localForecast'] = {
+      model: effectiveLocalModel,
+      temps: localTemps,
+    };
+    /* Calculate ECMWF vs local model disagreement for today+1..+3 */
+    const disagreements = [];
+    Object.keys(localTemps).filter(t => t > todayStr).sort().slice(0,4).forEach(t => {
+      const ecmwf = out[t]?.tempC;
+      const local = localTemps[t];
+      if (ecmwf != null && local != null) {
+        disagreements.push(Math.abs(ecmwf - local));
+      }
+    });
+    if (disagreements.length > 0) {
+      out['_modelDisagreement'] = Math.round(
+        disagreements.reduce((s,v)=>s+v,0)/disagreements.length * 10
+      ) / 10;
+    }
+    console.log(`[Local ${city.name}] ${effectiveLocalModel} loaded, avg disagreement with ECMWF: ${out['_modelDisagreement']}°C`);
+  }
+
+  return out;
+}
+
+async function fetchMarketBySlug(slug) {
+  const data = await tryFetch(`${PM_GAMMA}/events?slug=${encodeURIComponent(slug)}`);
+  if (!data) return null;
+  const events = Array.isArray(data) ? data : [data];
+  /* Try exact match first, then partial match (API sometimes returns similar slugs) */
+  return events.find(e => e.slug === slug)
+      || events.find(e => e.slug && e.slug.startsWith(slug))
+      || events.find(e => e.slug && slug.startsWith(e.slug))
+      || (events.length === 1 ? events[0] : null);
+}
+
+function parseTempRangeWx(q) {
+  if (!q) return null;
+  const ql = q.toLowerCase();
+
+  /* Determine unit from question text */
+  const isCelsius = q.includes('°C') || q.includes('℃') ||
+    ql.includes(' celsius') || ql.includes('degrees c') ||
+    /* if numbers are in realistic Celsius range (−30 to 55) and no °F */
+    (!q.includes('°F') && !q.includes('℉') && (() => {
+      const nums = [...q.matchAll(/(-?\d+(?:\.\d+)?)/g)].map(m => parseFloat(m[1]));
+      return nums.length > 0 && nums.every(n => n >= -30 && n <= 55);
+    })());
+
+  /* Below/lower */
+  if (ql.includes('or below') || ql.includes('or lower') || ql.includes('below') ||
+      q.includes('≤') || q.startsWith('<') || ql.includes('less than')) {
+    const m = q.match(/(-?\d+(?:\.\d+)?)/);
+    if (m) return { lo:-999, hi:parseFloat(m[1]), celsius:isCelsius };
+  }
+  /* Above/higher */
+  if (ql.includes('or higher') || ql.includes('or above') || ql.includes('or more') ||
+      q.includes('≥') || q.includes('+') || ql.includes('above') || ql.includes('more than')) {
+    const m = q.match(/(-?\d+(?:\.\d+)?)/);
+    if (m) return { lo:parseFloat(m[1]), hi:999, celsius:isCelsius };
+  }
+  /* Range: "28-30", "28–30", "-5 to 0", "28°C-30°C" */
+  const rng = q.match(/(-?\d+(?:\.\d+)?)\s*[°℃℉]?\s*[-–]\s*(-?\d+(?:\.\d+)?)/);
+  if (rng) return { lo:parseFloat(rng[1]), hi:parseFloat(rng[2]), celsius:isCelsius };
+  /* Single value: "29°C" */
+  const single = q.match(/(-?\d+(?:\.\d+)?)\s*[°℃℉]/);
+  if (single) return { lo:parseFloat(single[1]), hi:parseFloat(single[1]), celsius:isCelsius };
+
+  return null;
+}
+
+async function fetchWeatherMarkets(cityName) { return []; } /* replaced by slug approach below */
+
+
+async function fetchForecast(city) {
+  const r = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}` +
+    `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature` +
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code` +
+    `&forecast_days=7&timezone=auto`
+  );
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+/* ============================================================
+   MARKET EDGE DETECTORS (from research bot)
+   ============================================================ */
+/* ============================================================
+   WEATHER ANALYSERS (from weather scanner)
+   ============================================================ */
+function wmoEmoji(c){if(c<=1)return'☀️';if(c<=3)return'⛅';if(c<=49)return'🌫️';if(c<=67)return'🌧️';if(c<=77)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';return'🌡️';}
+function wmoDesc(c){if(c===0)return'Clear';if(c<=2)return'Partly cloudy';if(c<=3)return'Overcast';if(c<=49)return'Fog';if(c<=55)return'Drizzle';if(c<=67)return'Rain';if(c<=77)return'Snow';if(c<=82)return'Showers';if(c<=99)return'Storm';return'';}
+
+/* ============================================================
+   CITIES
+   ============================================================ */
+const CITIES = [
+  {name:'London',   country:'UK', lat:51.51, lon:-0.13,  on:true},
+  {name:'Paris',    country:'FR', lat:48.85, lon:2.35,   on:true},
+  {name:'New York', country:'US', lat:40.71, lon:-74.01, on:true},
+  {name:'Tokyo',    country:'JP', lat:35.68, lon:139.69, on:true},
+  {name:'Seoul',    country:'KR', lat:37.57, lon:126.98, on:true},
+  {name:'Hong Kong',country:'HK', lat:22.30, lon:114.18, on:true},
+  {name:'Chicago',  country:'US', lat:41.88, lon:-87.63, on:true},
+  {name:'Singapore',country:'SG', lat:1.35,  lon:103.82, on:false},
+  {name:'Dubai',    country:'UAE',lat:25.20, lon:55.27,  on:false},
+  {name:'Sydney',   country:'AU', lat:-33.87,lon:151.21, on:false},
+  {name:'Berlin',   country:'DE', lat:52.52, lon:13.41,  on:false},
+  {name:'Amsterdam',country:'NL', lat:52.37, lon:4.90,   on:false},
+];
+/* Airport-coordinate cities for weather scanner — only cities with confirmed active Polymarket markets */
+const WX_CITIES = [
+  /* United States */
+  {name:'New York',      slug:'nyc',           continent:'NA', lat:40.7772,  lon:-73.8726,  country:'US', station:'KLGA', nwsGrid:'OKX/37,39',   on:true},
+  {name:'Chicago',       slug:'chicago',        continent:'NA', lat:41.9742,  lon:-87.9073,  country:'US', station:'KORD', nwsGrid:'LOT/66,77',   on:true},
+  {name:'Miami',         slug:'miami',          continent:'NA', lat:25.7587,  lon:-80.2870,  country:'US', station:'KMIA', nwsGrid:'MFL/106,51',  on:true},
+  {name:'Dallas',        slug:'dallas',         continent:'NA', lat:32.8471,  lon:-96.8518,  country:'US', station:'KDAL', nwsGrid:'FWD/97,115',  on:true},
+  {name:'Seattle',       slug:'seattle',        continent:'NA', lat:47.4502,  lon:-122.3088, country:'US', station:'KSEA', nwsGrid:'SEW/124,61',  on:true},
+  {name:'Atlanta',       slug:'atlanta',        continent:'NA', lat:33.6407,  lon:-84.4277,  country:'US', station:'KATL', nwsGrid:'FFC/50,82',   on:true},
+  {name:'Los Angeles',   slug:'los-angeles',    continent:'NA', lat:33.9425,  lon:-118.4081, country:'US', station:'KLAX', nwsGrid:'LOX/150,41',  on:true},
+  {name:'Houston',       slug:'houston',        continent:'NA', lat:29.6454,  lon:-95.2789,  country:'US', station:'KHOU', nwsGrid:'HGX/66,93',   on:true},
+  {name:'Denver',        slug:'denver',         continent:'NA', lat:39.7170,  lon:-104.7517, country:'US', station:'KBKF', nwsGrid:'BOU/62,55',   on:false},
+  {name:'San Francisco', slug:'san-francisco',  continent:'NA', lat:37.6213,  lon:-122.3790, country:'US', station:'KSFO', nwsGrid:'MTR/84,105',  on:false},
+  {name:'Austin',        slug:'austin',         continent:'NA', lat:30.1975,  lon:-97.6664,  country:'US', station:'KAUS', nwsGrid:'EWX/157,91',  on:false},
+  /* Europe */
+  {name:'London',        slug:'london',         continent:'EU', lat:51.5033,  lon:0.0564,    country:'UK', station:'EGLC', localModel:'uk_met_office_um',    on:true},
+  {name:'Paris',         slug:'paris',          continent:'EU', lat:49.0244,  lon:2.3567,    country:'FR', station:'LFPB', localModel:'meteofrance_seamless', on:true},
+  {name:'Amsterdam',     slug:'amsterdam',      continent:'EU', lat:52.3086,  lon:4.7639,    country:'NL', station:'EHAM', localModel:'icon_seamless',        on:true},
+  {name:'Madrid',        slug:'madrid',         continent:'EU', lat:40.4936,  lon:-3.5668,   country:'ES', station:'LEMD', localModel:'meteofrance_seamless', on:false},
+  {name:'Milan',         slug:'milan',          continent:'EU', lat:45.6306,  lon:8.7231,    country:'IT', station:'LIMC', localModel:'icon_seamless',        on:false},
+  {name:'Munich',        slug:'munich',         continent:'EU', lat:48.3537,  lon:11.7750,   country:'DE', station:'EDDM', localModel:'icon_seamless',        on:false},
+  {name:'Helsinki',      slug:'helsinki',       continent:'EU', lat:60.3172,  lon:24.9633,   country:'FI', station:'EFHK', localModel:'icon_seamless',        on:false},
+  {name:'Warsaw',        slug:'warsaw',         continent:'EU', lat:52.1657,  lon:20.9671,   country:'PL', station:'EPWA', localModel:'icon_seamless',        on:false},
+  {name:'Istanbul',      slug:'istanbul',       continent:'EU', lat:41.2753,  lon:28.7519,   country:'TR', station:'LTFM', localModel:'icon_seamless',        on:false},
+  {name:'Ankara',        slug:'ankara',         continent:'EU', lat:40.1281,  lon:32.9951,   country:'TR', station:'LTAC', localModel:'icon_seamless',        on:false},
+  {name:'Moscow',        slug:'moscow',         continent:'EU', lat:55.5983,  lon:37.2615,   country:'RU', station:'UUWW', localModel:'icon_seamless',        on:false},
+  /* Asia-Pacific */
+  {name:'Tokyo',         slug:'tokyo',          continent:'AS', lat:35.5533,  lon:139.7811,  country:'JP', station:'RJTT', localModel:'jma_seamless',         on:true},
+  {name:'Hong Kong',     slug:'hong-kong',      continent:'AS', lat:22.3020,  lon:114.1740,  country:'HK', station:'HKO',  localModel:'cma_grapes_global',    on:true},  /* HKO Observatory — not ICAO, resolves on HK Observatory */
+  {name:'Seoul',         slug:'seoul',          continent:'AS', lat:37.4602,  lon:126.4407,  country:'KR', station:'RKSI', localModel:'kma_seamless',         on:false},
+  {name:'Busan',         slug:'busan',          continent:'AS', lat:35.1796,  lon:128.9382,  country:'KR', station:'RKPK', localModel:'kma_seamless',         on:false},
+  {name:'Singapore',     slug:'singapore',      continent:'AS', lat:1.3644,   lon:103.9915,  country:'SG', station:'WSSS', localModel:'icon_seamless',        on:false},
+  {name:'Shanghai',      slug:'shanghai',       continent:'AS', lat:31.1443,  lon:121.8083,  country:'CN', station:'ZSPD', localModel:'cma_grapes_global',    on:false},
+  {name:'Beijing',       slug:'beijing',        continent:'AS', lat:40.0799,  lon:116.5838,  country:'CN', station:'ZBAA', localModel:'cma_grapes_global',    on:false},
+  {name:'Guangzhou',     slug:'guangzhou',      continent:'AS', lat:23.3924,  lon:113.2988,  country:'CN', station:'ZGGG', localModel:'cma_grapes_global',    on:false},
+  {name:'Shenzhen',      slug:'shenzhen',       continent:'AS', lat:22.6395,  lon:113.8145,  country:'CN', station:'ZGSZ', localModel:'cma_grapes_global',    on:false},
+  {name:'Chengdu',       slug:'chengdu',        continent:'AS', lat:30.5785,  lon:103.9471,  country:'CN', station:'ZUUU', localModel:'cma_grapes_global',    on:false},
+  {name:'Chongqing',     slug:'chongqing',      continent:'AS', lat:29.7192,  lon:106.6416,  country:'CN', station:'ZUCK', localModel:'cma_grapes_global',    on:false},
+  {name:'Wuhan',         slug:'wuhan',          continent:'AS', lat:30.7839,  lon:114.2081,  country:'CN', station:'ZHHH', localModel:'cma_grapes_global',    on:false},
+  {name:'Qingdao',       slug:'qingdao',        continent:'AS', lat:36.2661,  lon:120.3747,  country:'CN', station:'ZSQD', localModel:'cma_grapes_global',    on:false},
+  {name:'Kuala Lumpur',  slug:'kuala-lumpur',   continent:'AS', lat:2.7456,   lon:101.7072,  country:'MY', station:'WMKK', localModel:'icon_seamless',        on:false},
+  {name:'Manila',        slug:'manila',         continent:'AS', lat:14.5086,  lon:121.0197,  country:'PH', station:'RPLL', localModel:'icon_seamless',        on:false},
+  {name:'Taipei',        slug:'taipei',         continent:'AS', lat:25.0697,  lon:121.5524,  country:'TW', station:'RCSS', localModel:'jma_seamless',         on:false},
+  {name:'Lucknow',       slug:'lucknow',        continent:'AS', lat:26.7606,  lon:80.8893,   country:'IN', station:'VILK', localModel:'icon_seamless',        on:false},
+  {name:'Karachi',       slug:'karachi',        continent:'AS', lat:24.8900,  lon:66.9389,   country:'PK', station:'OPKC', localModel:'icon_seamless',        on:false},
+  {name:'Jeddah',        slug:'jeddah',         continent:'ME', lat:21.6796,  lon:39.1565,   country:'SA', station:'OEJN', localModel:'icon_seamless',        on:false},
+  {name:'Tel Aviv',      slug:'tel-aviv',       continent:'ME', lat:32.0055,  lon:34.8854,   country:'IL', station:'LLBG', localModel:'icon_seamless',        on:false},
+  /* Oceania */
+  {name:'Wellington',    slug:'wellington',     continent:'OC', lat:-41.3272, lon:174.8052,  country:'NZ', station:'NZWN', localModel:'bom_access_global',    on:false},
+  /* Africa */
+  {name:'Cape Town',     slug:'cape-town',      continent:'AF', lat:-33.9648, lon:18.5979,   country:'ZA', station:'FACT', localModel:'icon_seamless',        on:false},
+  /* Americas */
+  {name:'Toronto',       slug:'toronto',        continent:'NA', lat:43.6772,  lon:-79.6306,  country:'CA', station:'CYYZ', localModel:'icon_seamless',        on:false},
+  {name:'Mexico City',   slug:'mexico-city',    continent:'NA', lat:19.4363,  lon:-99.0721,  country:'MX', station:'MMMX', localModel:'icon_seamless',        on:false},
+  {name:'Panama City',   slug:'panama-city',    continent:'NA', lat:8.9714,   lon:-79.5355,  country:'PA', station:'MPMG', localModel:'icon_seamless',        on:false},
+  {name:'São Paulo',     slug:'sao-paulo',      continent:'SA', lat:-23.4356, lon:-46.4731,  country:'BR', station:'SBGR', localModel:'icon_seamless',        on:false},
+  {name:'Buenos Aires',  slug:'buenos-aires',   continent:'SA', lat:-34.8222, lon:-58.5358,  country:'AR', station:'SAEZ', localModel:'icon_seamless',        on:false},
+];
+
+const MONTHS_EN = ['january','february','march','april','may','june',
+                   'july','august','september','october','november','december'];
+
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let wxOpps       = [];
+let cityData     = {};
+let lastScanTs   = parseInt(localStorage.getItem('pms_scan_ts') || '0') || 0;
+const bracketShifts = {}; /* oppIdx → shift offset (-N to +N) */
+
+/* ── Scan persistence ──────────────────────────────────────────
+   wxOpps + cityData live only in memory; without this a reload shows
+   the empty state until a full re-scan. We cache both (with a timestamp)
+   and rehydrate on boot. cityData can be large, so we wrap in try/catch
+   to tolerate quota errors. */
+const SCAN_TTL_MS = 6 * 60 * 60 * 1000; /* show cached results up to 6h old */
+function saveScan() {
+  lastScanTs = Date.now();
+  try {
+    localStorage.setItem('pms_scan_ts', String(lastScanTs));
+    localStorage.setItem('pms_wxopps', JSON.stringify(wxOpps));
+    localStorage.setItem('pms_citydata', JSON.stringify(cityData));
+  } catch (e) {
+    /* Quota exceeded — drop the heavier cityData, keep signals */
+    try { localStorage.removeItem('pms_citydata'); localStorage.setItem('pms_wxopps', JSON.stringify(wxOpps)); } catch {}
+  }
+  updateFreshness();
+}
+function restoreScan() {
+  if (!lastScanTs || Date.now() - lastScanTs > SCAN_TTL_MS) return false;
+  try {
+    const o = JSON.parse(localStorage.getItem('pms_wxopps') || '[]');
+    const c = JSON.parse(localStorage.getItem('pms_citydata') || '{}');
+    if (!Array.isArray(o) || !o.length) return false;
+    wxOpps   = o;
+    cityData = c || {};
+    /* Repopulate stat bar + render */
+    const showEl = document.getElementById('wt-showing');
+    if (showEl) showEl.textContent = wxOpps.length;
+    document.getElementById('wt-cities').textContent = Object.keys(cityData).length;
+    if (wxOpps[0]) document.getElementById('wt-ev').textContent = wxOpps[0].edgeLabel;
+    const badge = document.getElementById('wx-badge');
+    if (badge && wxOpps.length) { badge.textContent = wxOpps.length; badge.style.display = 'inline'; }
+    try { renderWeather(); } catch {}
+    try { renderCities();  } catch {}
+    updateFreshness();
+    return true;
+  } catch (e) { console.warn('restoreScan failed', e); return false; }
+}
+function updateFreshness() {
+  const wrap = document.getElementById('wt-freshness');
+  const txt  = document.getElementById('wt-fresh-txt');
+  if (!wrap || !txt || !lastScanTs) return;
+  const mins = Math.round((Date.now() - lastScanTs) / 60000);
+  const ago  = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : `${Math.round(mins/60)}h ago`;
+  const stale = Date.now() - lastScanTs > 60 * 60 * 1000;
+  txt.innerHTML = `Last scan ${ago}${stale ? ' · <span style="color:var(--amber)">stale</span>' : ''}`;
+  wrap.style.display = 'flex';
+}
+
+/* ── Weather filter state ── */
+const wxFilters = { single:true, bracket:true, arb:true };
+const dayFilters = { 0:true, 1:true, 2:true, 3:true };
+const confFilters = { high:true, med:true, low:true };
+let   wxSort    = 'ev'; /* ev | conf | city | date */
+let   bucketFilter = 'any'; /* any | 1 | 2 | 3 | 4+ */
+let   deltaFilter  = 'any'; /* any | 1 | 2 | 3 | none */
+let   windowFilter = 'any'; /* any | open | urgent | future */
+const contFilters = {NA:true,EU:true,AS:true,OC:true,ME:true,AF:true,SA:true};
+
+function toggleConfFilter(level, el) {
+  confFilters[level] = !confFilters[level];
+  el.classList.toggle('on', confFilters[level]);
+  applyWxFilters();
+}
+
+function setWindowFilter(val, el) {
+  windowFilter = val;
+  document.querySelectorAll('[id^="fw-"]').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  applyWxFilters();
+}
+
+function setDeltaFilter(val, el) {
+  document.querySelectorAll('[id^="fd-"]').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  const labels = { any:'Any', '1':'< 1°', '2':'< 2°', '3':'< 3°', none:'No local model' };
+  const lbl = document.getElementById('delta-label');
+  if (lbl) lbl.textContent = labels[val] || val;
+  applyWxFilters();
+}
+
+function toggleWxFilter(type, el) {
+  wxFilters[type] = !wxFilters[type];
+  el.classList.toggle('on', wxFilters[type]);
+  applyWxFilters();
+}
+function toggleDayFilter(day, el) {
+  dayFilters[day] = !dayFilters[day];
+  el.classList.toggle('on', dayFilters[day]);
+  el.classList.toggle('off', !dayFilters[day]);
+  applyWxFilters();
+}
+function toggleContinent(code, el) {
+  contFilters[code] = !contFilters[code];
+  el.classList.toggle('on', contFilters[code]);
+  /* Update city chips to reflect continent filter */
+  WX_CITIES.forEach(city => {
+    if (city.continent === code) city.on = contFilters[code];
+  });
+  buildChips();
+}
+
+function setBucketFilter(val, el) {
+  bucketFilter = val;
+  document.querySelectorAll('[id^="fb-"]').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  applyWxFilters();
+}
+
+function setWxSort(s, el) {
+  wxSort = s;
+  document.querySelectorAll('[id^="fs-"]').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  applyWxFilters();
+}
+
+function getSignalDay(o) {
+  /* Extract day offset from forecastDesc: "Day 1 forecast..." or station·date */
+  const m = (o.forecastDesc||'').match(/Day (\d)/);
+  if (m) return parseInt(m[1]) - 1;
+  /* For single bets, parse date from forecastDesc */
+  const dm = (o.forecastDesc||'').match(/(\d{4}-\d{2}-\d{2})/);
+  if (dm) {
+    const diff = Math.round((new Date(dm[1]) - new Date(new Date().toISOString().slice(0,10))) / 86400000);
+    return Math.max(0, Math.min(3, diff));
+  }
+  return 0;
+}
+
+function getSignalEv(o) {
+  return parseInt((o.edgeLabel||'0').replace(/[^0-9]/g,'')) || 0;
+}
+
+function getSignalConfLevel(o) {
+  /* Recompute confidence score (mirrors buildOppCard logic) so we can filter on it */
+  const cd   = cityData[o.city];
+  const acc  = cd?.forecast?.['_modelAccuracy'];
+  const dis  = cd?.forecast?.['_modelDisagreement'];
+  const day  = getSignalDay(o);
+  const evPct = getSignalEv(o);
+  let score = 50;
+  if (o.isArb)                      score += 40;
+  else if (o.isBracket && !o.isArb) score += 10;
+  else                               score -= 10;
+  score += [15, 8, 0, -10][Math.min(day, 3)];
+  if (!o.isArb) {
+    if      (evPct >= 20)  score += 15;
+    else if (evPct >= 10)  score +=  5;
+    else if (evPct >= 5)   score -=  5;
+    else if (evPct >= 0)   score -= 15;
+    else                   score -= 35;
+  }
+  if (acc && !acc.isFallback) {
+    const isF = acc.unit === '°F';
+    if      (acc.mae < (isF?2:1))  score += 15;
+    else if (acc.mae < (isF?4:2))  score +=  5;
+    else                            score -= 10;
+    if      (acc.within1 >= 70) score += 10;
+    else if (acc.within1 <  50) score -= 10;
+    if (Math.abs(acc.bias) > (isF?2:1)) score -= 5;
+  }
+  if (dis != null) {
+    if      (dis < 1) score += 10;
+    else if (dis > 2) score -= 15;
+  }
+  if (!o.isArb && evPct <= 0) score = Math.min(score, 44);
+  score = Math.max(0, Math.min(100, score));
+  return score >= 70 ? 'high' : score >= 45 ? 'medium' : 'low';
+}
+
+function applyWxFilters() {
+  if (!wxOpps.length) return;
+  const slider = document.getElementById('ev-slider');
+  const minEv = slider ? (parseInt(slider.value) || 0) : 0;
+
+  let filtered = wxOpps.filter(o => {
+    /* Confidence filter — use same scoring logic as card render */
+    const confLevel = getSignalConfLevel(o);
+    if (confLevel === 'high'   && !confFilters.high) return false;
+    if (confLevel === 'medium' && !confFilters.med)  return false;
+    if (confLevel === 'low'    && !confFilters.low)  return false;
+    /* Arb = guaranteed (cost < 100¢) */
+    if (o.isArb && !wxFilters.arb) return false;
+    /* Bracket = +EV but not arb */
+    if (o.isBracket && !o.isArb && !wxFilters.bracket) return false;
+    /* Single = exact temp bucket */
+    if (!o.isBracket && !wxFilters.single) return false;
+    /* Bracket count filter */
+    if (bucketFilter !== 'any') {
+      const n = o.isBracket ? (o.bracketBuckets||[]).length : 1;
+      if (bucketFilter === '1'  && n !== 1) return false;
+      if (bucketFilter === '2'  && n !== 2) return false;
+      if (bucketFilter === '3'  && n !== 3) return false;
+      if (bucketFilter === '4+' && n < 4)  return false;
+    }
+    /* EV filter */
+    if (getSignalEv(o) < minEv) return false;
+    /* Bet window filter */
+    if (windowFilter !== 'any') {
+      const today = new Date().toISOString().slice(0,10);
+      const isToday = o.date === today;
+      const isTomorrow = o.date === new Date(Date.now()+86400000).toISOString().slice(0,10);
+      if (windowFilter === 'future') {
+        if (!isTomorrow) return false;
+      } else {
+        if (!isToday) return false; /* open/urgent only apply to today */
+        const bw = getBetWindow(o.city, o.date);
+        if (windowFilter === 'open') {
+          if (!bw || bw.late || bw.early) return false;
+        } else if (windowFilter === 'urgent') {
+          if (!bw || !bw.urgent) return false;
+        }
+      }
+    }
+    /* Day filter */
+    const day = getSignalDay(o);
+    if (!dayFilters[Math.min(day,3)]) return false;
+    /* Delta filter — model disagreement between ECMWF and local model */
+    if (deltaFilter !== 'any') {
+      const cd  = cityData[o.city];
+      const dis = cd?.forecast?.['_modelDisagreement'];
+      if (deltaFilter === 'none') {
+        /* Only show signals where no local model exists (US cities + no-local-model intl) */
+        if (dis != null) return false;
+      } else {
+        const maxDelta = parseFloat(deltaFilter);
+        /* If no local model data, exclude when a threshold is set */
+        if (dis == null) return false;
+        if (dis >= maxDelta) return false;
+      }
+    }
+    return true;
+  });
+
+  /* Sort */
+  if (wxSort === 'ev')   filtered.sort((a,b) => getSignalEv(b) - getSignalEv(a));
+  if (wxSort === 'conf') filtered.sort((a,b) => (b.confidence||0) - (a.confidence||0));
+  if (wxSort === 'city') filtered.sort((a,b) => (a.city||'').localeCompare(b.city||''));
+  if (wxSort === 'date') filtered.sort((a,b) => getSignalDay(a) - getSignalDay(b));
+
+  /* Update count safely */
+  const showEl = document.getElementById('wt-showing');
+  if (showEl) showEl.textContent = filtered.length;
+  const lblEl = document.getElementById('wx-results-label');
+  if (lblEl) lblEl.textContent = `${filtered.length} of ${wxOpps.length} signals`;
+
+  renderWeatherFiltered(filtered);
+}
+
+function renderWeatherFiltered(opps) {
+  const el = document.getElementById('opp-list');
+  if (!opps.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>No signals match current filters.<br>Try lowering Min EV or enabling more types.</p></div>';
+    return;
+  }
+  el.innerHTML = opps.map((o) => {
+    try {
+      return buildOppCard(o, wxOpps.indexOf(o));
+    } catch(e) {
+      console.error('buildOppCard failed for', o?.city, o?.date, ':', e.message, e.stack);
+      /* Show a minimal fallback card so the list isn't empty */
+      return `<div class="ocard edge-temp" style="padding:12px 14px">
+        <div style="font-size:12px;font-weight:600;color:var(--amber)">${o?.city || '?'} · ${o?.date || ''}</div>
+        <div style="font-size:10px;color:var(--red);margin-top:4px">⚠ Card render error: ${e.message}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${o?.edgeLabel || ''} · ${o?.badgeLabel || ''}</div>
+      </div>`;
+    }
+  }).join('');
+}
+let betSize      = parseFloat(localStorage.getItem('pms_betsize') || '25');
+let tgToken      = localStorage.getItem('pms_tg_token') || '';
+let tgChat       = localStorage.getItem('pms_tg_chat')  || '';
+let alertArb     = localStorage.getItem('pms_alert_arb') === '1';
+let alertHiConf  = localStorage.getItem('pms_alert_hiconf') === '1';
+let alertedKeys  = new Set(JSON.parse(localStorage.getItem('pms_alerted') || '[]'));
+let autoTimer    = null;
+let newWx        = 0;
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+
+function saveSizing() {
+  betSize = parseFloat(document.getElementById('bet-size').value) || 25;
+  localStorage.setItem('pms_betsize', betSize);
+  toast('Saved — re-run scan to update signals');
+}
+
+function fmtK(n){if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(0)+'k';return'$'+Math.round(n);}
+function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400);}
+
+function copyAppLink() {
+  const url = 'https://leonvwijngaarden-png.github.io/Polymarket-Scanner/polymarket-combined.html';
+  const btn = document.getElementById('copy-link-btn');
+  navigator.clipboard.writeText(url).then(() => {
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(() => {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Link`;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  }).catch(() => {
+    /* Fallback for older browsers */
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Link copied!');
+  });
+}
+
+function goTab(name) {
+  const all=['weather','cities','scanner','guide','settings'];
+  all.forEach(n=>{
+    document.getElementById('p-'+n).classList.toggle('active',n===name);
+    const nb=document.getElementById('nav-'+n);
+    if(nb) nb.classList.toggle('active',n===name);
+  });
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',all[i]===name));
+  if(name==='weather'){newWx=0;document.getElementById('wx-badge').style.display='none';}
+}
+
+function setStatus(txt, mode) {
+  const p=document.getElementById('status-pill');
+  p.className='status-pill'+(mode?' '+mode:'');
+  document.getElementById('status-txt').textContent=txt;
+}
+function showProg(id,on){document.getElementById(id).style.display=on?'block':'none';}
+function setProg(fillId,txtId,pct,txt){document.getElementById(fillId).style.width=pct+'%';document.getElementById(txtId).textContent=txt;}
+
+/* ============================================================
+   WEATHER SCANNER
+   ============================================================ */
+
+async function runWeatherScan() {
+  const btn=document.getElementById('wx-btn'),icon=document.getElementById('wx-icon');
+  btn.disabled=true; icon.style.animation='spin 0.8s linear infinite';
+  setStatus('weather scan','wx'); showProg('wx-prog',true);
+  wxOpps=[]; cityData={};
+
+  try {
+
+  const active=WX_CITIES.filter(c=>c.on!==false);
+  const today=new Date();
+  let totalMkts=0,totalSigs=0;
+
+  for (let i=0;i<active.length;i++) {
+    const city=active[i];
+    setProg('wx-fill','wx-txt',Math.round(5+(i/active.length)*85),`${city.name}...`);
+    try {
+      /* All international cities resolve on Wunderground ICAO station data,
+         which pulls from the same METAR network as NOAA api.weather.gov.
+         Using NOAA station obs gives us the correct ground truth for accuracy.
+         Istanbul/Moscow/Tel Aviv were already here; now adding all others.
+         HKO (Hong Kong Observatory) is excluded — it uses a different source. */
+      const NOAA_INTL_STATIONS = new Set([
+        /* Europe */
+        'EGLC','LFPB','EHAM','LEMD','LIMC','EDDM','EFHK','EPWA','LTAC','LTFM','UUWW',
+        /* Asia */
+        'RJTT','RKSI','RKPK','WSSS','ZSPD','ZBAA','ZGGG','ZGSZ','ZUUU','ZUCK','ZHHH',
+        'ZSQD','WMKK','RPLL','RCSS','VILK','OPKC',
+        /* Middle East */
+        'OEJN','LLBG',
+        /* Oceania */
+        'NZWN',
+        /* Africa */
+        'FACT',
+        /* Americas (non-US) */
+        'CYYZ','MMMX','MPMG','SBGR','SAEZ',
+      ]);
+      const fc=city.country==='US'
+        ? await fetchNWSForecast(city)
+        : NOAA_INTL_STATIONS.has(city.station)
+          ? await fetchNOAAIntlForecast(city)
+          : await fetchOpenMeteoFc(city);
+      const fcType = city.country==='US' ? 'NWS'
+        : NOAA_INTL_STATIONS.has(city.station) ? 'NOAA+ECMWF'
+        : 'ECMWF';
+      cityData[city.name]={city,forecast:fc,forecastType:fcType};
+
+      for (let d=0;d<=3;d++) {
+        const dt=new Date(today); dt.setDate(today.getDate()+d);
+        const yyyy=dt.getFullYear(),month=MONTHS_EN[dt.getMonth()],day=dt.getDate();
+        const ds=dt.toISOString().slice(0,10);
+
+        let tempF=null;
+        if (city.country==='US') { tempF=fc[ds]??null; }
+        else { const e=fc[ds]; if(e?.tempC!=null) tempF=Math.round(e.tempC*9/5+32); }
+        if (tempF==null) continue;
+
+        const slug=`highest-temperature-in-${city.slug}-on-${month}-${day}-${yyyy}`;
+        const event=await fetchMarketBySlug(slug);
+        if (!event) continue;
+        totalMkts++;
+
+        /* ── Parse ALL buckets for this event ── */
+        const allBuckets = [];
+        for (const mkt of (event.markets||[])) {
+          const rng = parseTempRangeWx(mkt.question||'');
+          if (!rng) continue;
+
+          /* Price priority:
+             1. bestAsk  — the actual price you pay to BUY YES (most accurate)
+             2. outcomePrices[0] — mid price from API (slightly lower than ask)
+             3. lastTradePrice — last trade (may be stale)
+             We want bestAsk because that's what Polymarket charges you. */
+          let yesP = 0;
+          /* bestAsk is the ask price for YES — what you actually pay */
+          if (mkt.bestAsk)       yesP = parseFloat(mkt.bestAsk);
+          /* outcomePrices is JSON-encoded string, index 0 = YES mid */
+          if (!yesP || yesP <= 0) {
+            try { yesP = parseFloat(JSON.parse(mkt.outcomePrices||'[0]')[0]); } catch {}
+          }
+          /* lastTradePrice as final fallback */
+          if (!yesP || yesP <= 0) yesP = parseFloat(mkt.lastTradePrice||0);
+
+          /* Add a small spread buffer (0.5¢) to account for bid-ask spread
+             so the combined cost estimate is conservative rather than optimistic */
+          if (yesP > 0) yesP = Math.min(0.99, yesP + 0.005);
+
+          if (yesP <= 0 || yesP >= 1) continue;
+          allBuckets.push({ rng, yesP, question: mkt.question||'', slug: mkt.slug||event.slug||'' });
+        }
+        if (!allBuckets.length) continue;
+
+        /* Sort buckets by low temperature */
+        allBuckets.sort((a,b) => a.rng.lo - b.rng.lo);
+        const tempC  = city.country === 'US' ? Math.round((tempF-32)*5/9) : Math.round((tempF-32)*5/9);
+        const dayOffset = d;
+
+        /* Determine if buckets use Celsius (international) or Fahrenheit (US) */
+        const bucketsAreCelsius = allBuckets.some(b => b.rng.celsius);
+        const rawTempC = (tempF - 32) * 5 / 9;
+        const tempCval = Math.floor(rawTempC);
+        const forecastDisplay = bucketsAreCelsius
+          ? `${tempCval}°C`
+          : `${tempF}°F (${tempCval}°C)`;
+
+        /* ── Bias correction — always applied when bias data exists ──
+           We always shift the forecast by the measured bias so bracket
+           targeting stays accurate. Small biases shift by their exact amount;
+           there is no threshold gate — even a 0.2°C warm bias matters when
+           you're deciding between the 33°C and 34°C bucket. */
+        const acc     = fc['_modelAccuracy'];
+        const fcEntry = city.country !== 'US' ? fc[ds] : null;
+        const spreadC = fcEntry?.spreadC;
+        const errUnit = bucketsAreCelsius ? '°C' : '°F';
+
+        /* Raw measured bias — use whatever the accuracy check found */
+        const rawBiasF = (city.country === 'US' && acc?.bias != null && !acc.isFallback)
+          ? acc.bias : 0;
+        const rawBiasC = (city.country !== 'US' && acc?.bias != null && !acc.isFallback)
+          ? acc.bias : (fcEntry?.biasC || 0);
+
+        /* Always use the full bias — no cap, no noise threshold.
+           If bias is 0 or missing the correction is a no-op. */
+        const measuredBiasF = rawBiasF;
+        const measuredBiasC = rawBiasC;
+
+        /* Whether bias is non-trivial (for display emphasis) */
+        const biasAppliedF = city.country === 'US'  && Math.abs(measuredBiasF) >= 0.5;
+        const biasAppliedC = city.country !== 'US'  && Math.abs(measuredBiasC) >= 0.1 && bucketsAreCelsius;
+
+        /* Bias-corrected temperatures */
+        const tempFcorrected    = Math.round(tempF - measuredBiasF);
+        const rawTempCcorrected = (tempFcorrected - 32) * 5 / 9;
+        const rawTempCbiased    = rawTempC - measuredBiasC;
+
+        /* Unadjusted values for display */
+        const unadjC = tempCval;
+        const unadjF = tempF;
+        const adjC   = Math.floor(rawTempCbiased);
+
+        /* Error margin badge — always show bias when it exists */
+        let errMarginVal;
+        if (spreadC != null) {
+          const halfSpread = Math.round(spreadC / 2 * 10) / 10;
+          const biasStr    = Math.abs(measuredBiasC) >= 0.1
+            ? ` · bias ${measuredBiasC > 0 ? '+' : ''}${measuredBiasC}°C`
+            : '';
+          errMarginVal = `±${halfSpread}°C ensemble${biasStr}`;
+        } else if (city.country === 'US') {
+          const errVals = [2,4,6,8];
+          const biasStr = Math.abs(measuredBiasF) >= 0.5
+            ? ` · bias ${measuredBiasF > 0 ? '+' : ''}${measuredBiasF}°F`
+            : '';
+          errMarginVal = `±${errVals[Math.min(d,3)]}°F${biasStr}`;
+        } else {
+          const errVals = [1,2,3,4];
+          const biasStr = Math.abs(measuredBiasC) >= 0.1
+            ? ` · bias ${measuredBiasC > 0 ? '+' : ''}${measuredBiasC}°C`
+            : '';
+          errMarginVal = `±${errVals[Math.min(d,3)]}°C${biasStr}`;
+        }
+
+        /* Bucket matching — always use bias-corrected temperature */
+        const forecastForMatch = bucketsAreCelsius
+          ? Math.floor(rawTempCbiased)
+          : tempFcorrected;
+
+        /* Find the exact bracket */
+        const exactIdx = allBuckets.findIndex(b => {
+          const lo = b.rng.lo, hi = b.rng.hi;
+          if (lo === hi) return forecastForMatch === lo;
+          return forecastForMatch >= lo && forecastForMatch <= hi;
+        });
+
+        let forecastDisplayFull;
+        if (biasAppliedF) {
+          forecastDisplayFull = `${tempFcorrected}°F (${Math.floor(rawTempCcorrected)}°C)`;
+        } else if (biasAppliedC) {
+          forecastDisplayFull = `${adjC}°C`;
+        } else {
+          forecastDisplayFull = forecastDisplay;
+        }
+
+        /* Raw → adj line — always shown when bias data exists and is non-zero */
+        const forecastRaw = biasAppliedF
+          ? `Raw ${unadjF}°F → adj. ${measuredBiasF > 0 ? '-' : '+'}${Math.abs(measuredBiasF)}°F`
+          : biasAppliedC
+            ? `Raw ${unadjC}°C → adj. ${measuredBiasC > 0 ? '' : '+'}${-measuredBiasC}°C`
+            : null;
+
+        /* ── CORE 3: bucket before + exact + bucket after ──────────────────
+           This is the primary signal. Covers ±1 bucket of forecast error.
+           Always generated when an exact match exists and neighbours available. */
+        if (exactIdx >= 0) {
+          const lo  = Math.max(0, exactIdx - 1);
+          const hi  = Math.min(allBuckets.length - 1, exactIdx + 1);
+          const core3 = allBuckets.slice(lo, hi + 1);
+          const cost3  = core3.reduce((s,b) => s + b.yesP, 0);
+          const ev3    = Math.round(((1 / cost3) - 1) * 100);
+          const isArb3 = cost3 < 0.999;
+
+          /* Always show core-3 — it's the main signal regardless of cost */
+          const rangeLabel3 = buildRangeLabel(core3);
+          wxOpps.push({
+            isWeather:true, type:'bracket',
+            edgeClass:  isArb3 ? 'edge-arb' : cost3 < 1.05 ? 'edge-arb' : 'edge-temp',
+            badgeClass: isArb3 ? 'badge-arb' : 'badge-bracket',
+            badgeLabel: isArb3 ? '⚡ Core-3 ARB' : cost3 < 1.05 ? '🎯 Core-3 (+EV)' : '🎯 Core-3 bracket',
+            city:city.name,
+            market:`${city.name} ${ds} — ${rangeLabel3}`,
+            slug: core3[0].slug,
+            forecastVal:forecastDisplayFull, forecastRaw:forecastRaw, date:ds,
+            forecastDesc:`Forecast ±1 bucket · ${city.station} · ${ds}`,
+            marketVal:`${Math.round(cost3*100)}¢ total`,
+            marketDesc:`${core3.length} buckets (−1 · exact · +1)`,
+            edgePos: ev3 > 0,
+            edgeLabel: isArb3
+              ? `+${Math.abs(ev3)}% GUARANTEED`
+              : ev3 > 0 ? `+${ev3}% EV` : `${ev3}% EV`,
+            reason: isArb3
+              ? `Buy all 3 adjacent buckets for ${Math.round(cost3*100)}¢. One MUST resolve YES → guaranteed +${Math.abs(ev3)}¢ profit per share.`
+              : `Forecast ${tempF}°F. Covering ±1 bucket costs ${Math.round(cost3*100)}¢. EV: ${ev3 > 0 ? '+' : ''}${ev3}% if forecast is within 1 bucket.`,
+            confidence: isArb3 ? 99 : Math.min(88, 50 + ev3),
+            isBracket:true,
+            isCore3:true,
+            errorMargin:errMarginVal,
+            allBuckets: allBuckets.map(b => ({...b})),
+            exactIdx,
+            bracketBuckets: core3.map(b => ({
+              question: b.question,
+              price: Math.round(b.yesP*100),
+              slug: b.slug,
+              isExact: allBuckets.indexOf(b) === exactIdx,
+            })),
+            isArb: isArb3,
+          });
+          totalSigs++;
+
+          /* ── Also show the single exact bracket for reference ── */
+          const exact = allBuckets[exactIdx];
+          const ev1   = Math.round(((1/exact.yesP)-1)*100);
+          if (ev1 >= 1.5) {
+            wxOpps.push({
+              isWeather:true, type:'temp', edgeClass:'edge-temp',
+              badgeClass:'badge-temp', badgeLabel:'🌡 Exact bucket',
+              city:city.name, market:exact.question, slug:exact.slug,
+              forecastVal:forecastDisplayFull, forecastRaw:forecastRaw, date:ds,
+              forecastDesc:`Exact match · ${city.station} · ${ds}`,
+              marketVal:`${Math.round(exact.yesP*100)}¢`,
+              marketDesc:`"${exact.question.slice(0,35)}…" implied`,
+              edgePos:true, edgeLabel:`+${ev1}% EV`,
+              reason:`Forecast ${tempF}°F exactly matches this bucket at ${Math.round(exact.yesP*100)}¢. Higher EV than Core-3 but no error tolerance.`,
+              confidence:Math.min(85,20+ev1),
+              isBracket:false,
+              errorMargin:errMarginVal,
+            });
+            totalSigs++;
+          }
+        }
+
+        /* ── Wider brackets: only when they're guaranteed arbs ─────────────
+           Only surface 4-bucket and 5-bucket windows if they cost < $1
+           (otherwise they're clearly negative EV and just noise). */
+        for (let winSize = 4; winSize <= Math.min(5, allBuckets.length); winSize++) {
+          for (let start = 0; start <= allBuckets.length - winSize; start++) {
+            const win = allBuckets.slice(start, start + winSize);
+            /* Must include the exact bracket */
+            if (exactIdx < start || exactIdx >= start + winSize) continue;
+            const cost = win.reduce((s,b) => s + b.yesP, 0);
+            if (cost >= 0.999) continue; /* only guaranteed arbs */
+            const ev   = Math.round(((1/cost)-1)*100);
+            const rl   = buildRangeLabel(win);
+            wxOpps.push({
+              isWeather:true, type:'bracket', edgeClass:'edge-arb',
+              badgeClass:'badge-arb', badgeLabel:`⚡ ${winSize}-bucket ARB`,
+              city:city.name, market:`${city.name} ${ds} — ${rl}`,
+              slug: win[0].slug,
+              forecastVal:forecastDisplayFull, forecastRaw:forecastRaw, date:ds,
+              forecastDesc:`${winSize}-bucket arb · ${city.station} · ${ds}`,
+              marketVal:`${Math.round(cost*100)}¢ total`,
+              marketDesc:`${winSize} buckets guaranteed`,
+              edgePos:true, edgeLabel:`+${Math.abs(ev)}% GUARANTEED`,
+              reason:`Buy all ${winSize} adjacent buckets for ${Math.round(cost*100)}¢. One MUST resolve YES → +${Math.abs(ev)}¢ guaranteed.`,
+              confidence:99,
+              isBracket:true, isArb:true,
+              errorMargin:errMarginVal,
+              bracketBuckets: win.map(b => ({
+                question:b.question, price:Math.round(b.yesP*100), slug:b.slug,
+                isExact: allBuckets.indexOf(b) === exactIdx,
+              })),
+            });
+            totalSigs++;
+          }
+        }
+      }
+    } catch(e){console.warn(city.name,e.message);}
+  }
+
+  /* Sort and render */
+  wxOpps.sort((a,b)=>b.confidence-a.confidence);
+  setProg('wx-fill','wx-txt',100,`${totalMkts} markets · ${totalSigs} signals`);
+  setTimeout(()=>showProg('wx-prog',false),1500);
+  newWx=wxOpps.length;
+  if(newWx>0){document.getElementById('wx-badge').textContent=newWx;document.getElementById('wx-badge').style.display='inline';}
+  document.getElementById('wt-showing').textContent=wxOpps.length;
+  document.getElementById('wt-cities').textContent=Object.keys(cityData).length;
+  const bestWx=wxOpps[0];
+  if(bestWx) document.getElementById('wt-ev').textContent=bestWx.edgeLabel;
+  try { renderWeather(); } catch(e){ console.error('renderWeather failed',e); }
+  try { renderCities(); }  catch(e){ console.error('renderCities failed',e); }
+  toast(`${totalMkts} markets · ${totalSigs} signals`);
+
+  /* Persist results so a reload restores the last scan instead of an empty state */
+  try { saveScan(); } catch(e){ console.warn('saveScan failed', e); }
+  /* Fire Telegram alerts for any new matching signals */
+  try { await maybeFireAlerts(); } catch(e){ console.warn('alerts failed', e); }
+
+  } catch(err) {
+    console.error('runWeatherScan error:', err);
+    toast('Scan error — check console');
+  } finally {
+    btn.disabled=false; icon.style.animation=''; setStatus('ready','');
+    showProg('wx-prog',false);
+  }
+}
+
+
+async function runAll() { await runWeatherScan(); }
+
+/* ============================================================
+   RENDER — WEATHER OPPORTUNITIES
+   ============================================================ */
+function buildRangeLabel(buckets) {
+  const isCelsius = buckets.some(b => b.rng.celsius);
+  const unit = isCelsius ? '°C' : '°F';
+  const lo = buckets[0].rng.lo;
+  const hi = buckets[buckets.length-1].rng.hi;
+  const loStr = lo === -999 ? '<' + buckets[0].rng.hi + unit : lo + unit;
+  const hiStr = hi === 999  ? '>' + buckets[buckets.length-1].rng.lo + unit : hi + unit;
+  return loStr + '–' + hiStr;
+}
+
+function shiftBracket(oppIdx, dir) {
+  const o = wxOpps[oppIdx];
+  if (!o?.allBuckets || !o.isCore3) return;
+  const cur   = bracketShifts[oppIdx] || 0;
+  const next  = cur + dir;
+  const abs   = o.allBuckets;
+  const exact = o.exactIdx;
+  /* Window: exactIdx-1+shift .. exactIdx+1+shift, clamped to bucket list */
+  const lo    = Math.max(0, exact - 1 + next);
+  const hi    = Math.min(abs.length - 1, exact + 1 + next);
+  if (lo < 0 || hi >= abs.length || lo > hi) return; /* at edge */
+  bracketShifts[oppIdx] = next;
+  /* Re-render just this card */
+  const el = document.querySelector(`[data-opp-idx="${oppIdx}"]`);
+  if (el) el.outerHTML = buildOppCard(o, oppIdx);
+}
+
+function buildShiftedBracketHtml(o, oppIdx) {
+  try {
+    if (!o.allBuckets?.length || !o.isCore3 || o.exactIdx == null) return null;
+    const shift = bracketShifts[oppIdx] || 0;
+    const abs   = o.allBuckets;
+    const exact = o.exactIdx;
+    const lo    = Math.max(0, exact - 1 + shift);
+    const hi    = Math.min(abs.length - 1, exact + 1 + shift);
+    if (lo > hi) return null;
+    const win   = abs.slice(lo, hi + 1);
+    const total = win.reduce((s,b) => s + (b.yesP || 0), 0) * 100; /* in cents */
+    if (!total) return null;
+    const isArb  = total < 99.9;
+    const ev     = Math.round(((100 / total) - 1) * 100);
+    const atTop  = hi >= abs.length - 1;
+    const atBot  = lo <= 0;
+
+    const evColor  = isArb ? 'var(--green)' : ev > 0 ? 'var(--amber)' : 'var(--red)';
+    const evStr    = isArb ? `+${Math.abs(ev)}% GUARANTEED ✓` : `${ev > 0 ? '+' : ''}${ev}% EV`;
+    const shiftStr = shift === 0 ? 'Base (forecast center)'
+      : shift > 0 ? `+${shift} bucket${Math.abs(shift)>1?'s':''} higher`
+      : `${shift} bucket${Math.abs(shift)>1?'s':''} lower`;
+
+    /* ── Flat bet sizing using the shifted window ── */
+    let sizingHtml = '';
+    if (betSize > 0 && total > 0) {
+      const shares = betSize / (total / 100);
+      const payout = shares;
+      const profit = payout - betSize;
+
+      const cd_sz  = cityData[o.city];
+      const dis_sz = cd_sz?.forecast?.['_modelDisagreement'];
+      const deltaNote = dis_sz != null && dis_sz >= 1
+        ? ` · ⚠️ Δ${dis_sz}° model disagreement` : '';
+
+      const sizeRows = win.map((b, wi) => {
+        const isExact    = (lo + wi) === exact;
+        const bucketName = b.question?.replace(/Will the highest temperature in [\w\s]+ be (between )?/i,'')
+          .replace(/ degrees?( Fahrenheit| Celsius)?/i,'°').slice(0,22) || '?';
+        const dollars    = shares * (b.yesP || 0);
+        return `<div class="bs-row ${isExact?'bs-exact':''}">
+          <div class="bs-name">${isExact?'→ ':''}${bucketName}</div>
+          <div class="bs-val" style="text-align:center;color:var(--amber)">${Math.round((b.yesP||0)*100)}¢</div>
+          <div class="bs-val" style="text-align:center;color:var(--green)">$${dollars.toFixed(2)}</div>
+          <div class="bs-val" style="text-align:right">${shares.toFixed(1)}</div>
+        </div>`;
+      }).join('');
+
+      sizingHtml = `<div class="bracket-sizing">
+        <div class="bs-header">
+          <div class="bs-col-label">Bracket</div>
+          <div class="bs-col-label" style="text-align:center">Price</div>
+          <div class="bs-col-label" style="text-align:center">Buy $</div>
+          <div class="bs-col-label" style="text-align:right">Shares</div>
+        </div>
+        ${sizeRows}
+        <div class="bs-total">
+          <div class="bs-total-label">Total spent</div>
+          <div class="bs-total-val">$${betSize.toFixed(2)}</div>
+          <div class="bs-total-payout">→ Payout if any resolves: <strong style="color:var(--green)">$${payout.toFixed(2)}</strong> (${profit>=0?'+':''}$${profit.toFixed(2)} profit)</div>
+        </div>
+        <div style="padding:4px 12px 8px;font-size:10px;color:var(--text3)">Flat $${betSize} bet · ${shares.toFixed(1)} shares each bracket${deltaNote}</div>
+      </div>`;
+    }
+
+    return `
+      ${sizingHtml}
+      <div class="shift-row">
+        <button class="shift-btn dn" onclick="shiftBracket(${oppIdx},-1)" ${atBot?'disabled style="opacity:0.3;cursor:default"':''}>▼ Lower</button>
+        <span class="shift-lbl">${shiftStr}</span>
+        <button class="shift-btn up" onclick="shiftBracket(${oppIdx},+1)" ${atTop?'disabled style="opacity:0.3;cursor:default"':''}>▲ Higher</button>
+      </div>`;
+  } catch(e) {
+    console.warn('buildShiftedBracketHtml error:', e.message);
+    return null;
+  }
+}
+
+function getWundergroundUrl(cityName, date) {
+  const d      = date ? new Date(date) : new Date();
+  const params = `?day=${d.getUTCDate()}&month=${d.getUTCMonth()+1}&year=${d.getUTCFullYear()}`;
+
+  const urls = {
+    /* US */
+    'New York':      'us/ny/new-york-city/KLGA',
+    'Chicago':       'us/il/chicago/KORD',
+    'Miami':         'us/fl/miami/KMIA',
+    'Dallas':        'us/tx/dallas/KDAL',
+    'Seattle':       'us/wa/seattle/KSEA',
+    'Atlanta':       'us/ga/atlanta/KATL',
+    'Los Angeles':   'us/ca/los-angeles/KLAX',
+    'Houston':       'us/tx/houston/KHOU',
+    'Denver':        'us/co/aurora/KBKF',
+    'San Francisco': 'us/ca/san-francisco/KSFO',
+    'Austin':        'us/tx/austin/KAUS',
+    /* Europe */
+    'London':        'gb/london/EGLC',
+    'Paris':         'fr/bonneuil-en-france/LFPB',
+    'Amsterdam':     'nl/schiphol/EHAM',
+    'Madrid':        'es/madrid/LEMD',
+    'Milan':         'it/milan/LIMC',
+    'Munich':        'de/munich/EDDM',
+    'Helsinki':      'fi/vantaa/EFHK',
+    'Warsaw':        'pl/warsaw/EPWA',
+    'Ankara':        'tr/%C3%87ubuk/LTAC',
+    /* Asia */
+    'Tokyo':         'jp/tokyo/RJTT',
+    'Seoul':         'kr/incheon/RKSI',
+    'Busan':         'kr/busan/RKPK',
+    'Singapore':     'sg/singapore/WSSS',
+    'Shanghai':      'cn/shanghai/ZSPD',
+    'Beijing':       'cn/beijing/ZBAA',
+    'Guangzhou':     'cn/guangzhou/ZGGG',
+    'Shenzhen':      'cn/shenzhen/ZGSZ',
+    'Chengdu':       'cn/chengdu/ZUUU',
+    'Chongqing':     'cn/chongqing/ZUCK',
+    'Wuhan':         'cn/wuhan/ZHHH',
+    'Qingdao':       'cn/qingdao/ZSQD',
+    'Kuala Lumpur':  'my/sepang-district/WMKK',
+    'Manila':        'ph/manila/RPLL',
+    'Taipei':        'tw/taipei/RCSS',
+    'Lucknow':       'in/lucknow/VILK',
+    'Karachi':       'pk/karachi/OPKC',
+    /* Middle East */
+    'Jeddah':        'sa/jeddah/OEJN',
+    /* Oceania */
+    'Wellington':    'nz/wellington/NZWN',
+    /* Africa */
+    'Cape Town':     'za/matroosfonteIn/FACT',
+    /* Americas */
+    'Toronto':       'ca/mississauga/CYYZ',
+    'Mexico City':   'mx/mexico-city/MMMX',
+    'Panama City':   'pa/panama-city/MPMG',
+    'São Paulo':     'br/guarulhos/SBGR',
+    'Buenos Aires':  'ar/ezeiza/SAEZ',
+  };
+
+  /* NOAA weather.gov timeseries for cities that resolve via NOAA */
+  const noaaUrls = {
+    'Istanbul':  'https://www.weather.gov/wrh/timeseries?site=LTFM',
+    'Moscow':    'https://www.weather.gov/wrh/timeseries?site=UUWW',
+    'Tel Aviv':  'https://www.weather.gov/wrh/timeseries?site=LLBG',
+  };
+
+  /* HKO Observatory for Hong Kong */
+  if (cityName === 'Hong Kong') return 'https://www.weather.gov.hk/en/cis/climat.htm';
+
+  if (noaaUrls[cityName]) return noaaUrls[cityName];
+
+  const path = urls[cityName];
+  if (!path) return 'https://www.wunderground.com/';
+  return `https://www.wunderground.com/history/daily/${path}${params}`;
+}
+
+
+/* ── Best bet window (Netherlands time, UTC+2 in summer) ──
+   Opens when local morning obs are in (08:00 local time),
+   closes 2hrs before the expected daily high (sweet spot before market prices it in). */
+function getBetWindow(cityName, date) {
+  const today = new Date().toISOString().slice(0,10);
+  const day   = date === today ? 0
+    : date === new Date(Date.now()+86400000).toISOString().slice(0,10) ? 1
+    : date === new Date(Date.now()+172800000).toISOString().slice(0,10) ? 2 : 3;
+
+  if (day >= 2) return null;
+
+  const cityTZ = {
+    /* US East — UTC-4 */
+    'New York':      {utc:-4, highH:15}, 'Miami':       {utc:-4, highH:15},
+    'Atlanta':       {utc:-4, highH:15}, 'Boston':      {utc:-4, highH:15},
+    'Washington DC': {utc:-4, highH:15},
+    /* US Central — UTC-5 */
+    'Chicago':       {utc:-5, highH:15}, 'Dallas':      {utc:-5, highH:15},
+    'Houston':       {utc:-5, highH:15}, 'New Orleans': {utc:-5, highH:15},
+    'Minneapolis':   {utc:-5, highH:15},
+    /* US Mountain / West */
+    'Denver':        {utc:-6, highH:15}, 'Phoenix':     {utc:-7, highH:15},
+    'Los Angeles':   {utc:-7, highH:16}, 'Seattle':     {utc:-7, highH:16},
+    'San Francisco': {utc:-7, highH:16}, 'Las Vegas':   {utc:-7, highH:16},
+    'Austin':        {utc:-5, highH:15},
+    /* Canada */
+    'Toronto':       {utc:-4, highH:15},
+    /* Latin America */
+    'Mexico City':   {utc:-5, highH:15}, 'Panama City': {utc:-5, highH:14},
+    'São Paulo':     {utc:-3, highH:14}, 'Buenos Aires':{utc:-3, highH:14},
+    /* Europe */
+    'London':        {utc:+1, highH:15}, 'Paris':       {utc:+2, highH:15},
+    'Amsterdam':     {utc:+2, highH:15}, 'Madrid':      {utc:+2, highH:16},
+    'Milan':         {utc:+2, highH:15}, 'Munich':      {utc:+2, highH:15},
+    'Helsinki':      {utc:+3, highH:15}, 'Warsaw':      {utc:+2, highH:15},
+    'Ankara':        {utc:+3, highH:15}, 'Istanbul':    {utc:+3, highH:15},
+    'Moscow':        {utc:+3, highH:15},
+    /* Middle East */
+    'Tel Aviv':      {utc:+3, highH:14}, 'Jeddah':      {utc:+3, highH:14},
+    /* Africa */
+    'Cape Town':     {utc:+2, highH:15},
+    /* Asia */
+    'Tokyo':         {utc:+9, highH:14}, 'Seoul':       {utc:+9, highH:14},
+    'Busan':         {utc:+9, highH:14}, 'Beijing':     {utc:+8, highH:14},
+    'Shanghai':      {utc:+8, highH:14}, 'Hong Kong':   {utc:+8, highH:14},
+    'Guangzhou':     {utc:+8, highH:14}, 'Shenzhen':    {utc:+8, highH:14},
+    'Chengdu':       {utc:+8, highH:14}, 'Chongqing':   {utc:+8, highH:14},
+    'Wuhan':         {utc:+8, highH:14}, 'Qingdao':     {utc:+8, highH:14},
+    'Singapore':     {utc:+8, highH:14}, 'Kuala Lumpur':{utc:+8, highH:14},
+    'Manila':        {utc:+8, highH:14}, 'Taipei':      {utc:+8, highH:14},
+    'Lucknow':       {utc:+5.5,highH:14},'Karachi':     {utc:+5, highH:14},
+    /* Oceania */
+    'Wellington':    {utc:+12, highH:14},
+  };
+
+  const tz = cityTZ[cityName];
+  if (!tz) return null;
+
+  const NL_UTC = 2; /* CEST */
+
+  /* Window opens when local morning obs are in: 08:00 local → NL time */
+  const openLocal  = 8;
+  const openInNL   = openLocal - tz.utc + NL_UTC;
+
+  /* Window closes 2hrs before expected daily high */
+  const closeInNL  = tz.highH - tz.utc + NL_UTC - 2;
+
+  const fmt = h => {
+    const hh = ((Math.floor(h) % 24) + 24) % 24;
+    return `${String(hh).padStart(2,'0')}:00`;
+  };
+
+  if (day === 1) return { label: `bet ${fmt(openInNL)}–${fmt(closeInNL)} NL tomorrow`, urgent: false };
+
+  const nowH = new Date().getUTCHours() + NL_UTC;
+  const late   = nowH >= closeInNL;
+  const early  = nowH < openInNL;
+  const urgent = !late && !early && (closeInNL - nowH) <= 2;
+
+  if (late) return { label: `window closed`, urgent: false, late: true };
+  if (early) return { label: `opens ${fmt(openInNL)} NL`, urgent: false, early: true };
+  return {
+    label: `bet ${fmt(openInNL)}–${fmt(closeInNL)} NL`,
+    urgent,
+  };
+}
+
+function buildOppCard(o, oppIdx) {
+  const url  = o.slug ? `https://polymarket.com/event/${o.slug}` : 'https://polymarket.com';
+  const mktP = parseInt(o.marketVal) || 50;
+  const evPct= getSignalEv(o);
+
+  /* Position size — single bets: flat $betSize */
+  let sizeHtml = '';
+  if (!o.isBracket && betSize > 0) {
+    const p      = mktP / 100;
+    const shares = Math.round(betSize / p);
+    const payout = shares * 1.00;
+    const profit = payout - betSize;
+    sizeHtml = `<div class="pos-size">
+      <div><div class="ps-label">Bet amount</div><div class="ps-val">$${betSize.toFixed(2)}</div></div>
+      <div style="text-align:center"><div class="ps-label">Shares</div><div class="ps-val">${shares}</div></div>
+      <div style="text-align:right"><div class="ps-label">Profit if YES</div><div class="ps-val">+$${profit.toFixed(2)}</div></div>
+    </div>
+    <div style="padding:4px 12px 7px;font-size:10px;color:var(--text3)">Flat $${betSize} bet · ${shares} shares at ${mktP}¢</div>`;
+  }
+
+  /* Bracket breakdown */
+  let bracketHtml = '';
+  if (o.isBracket && o.bracketBuckets) {
+    const total    = o.bracketBuckets.reduce((s,b) => s+b.price, 0);
+    const totalCls = total < 95 ? 'good' : total < 100 ? 'ok' : 'bad';
+
+    /* ── Per-bucket dollar amounts for equal SHARES ──────────────────────
+       The goal is to buy S shares of each bracket.
+       Cost per bracket = S × (price/100)
+       To keep total outlay = T dollars across all N buckets:
+         S = T / (sum of all prices / 100)
+         Dollar per bracket i = S × (price_i / 100)
+       This way each bracket gets a DIFFERENT dollar amount but the SAME number of shares.
+       One bucket resolves YES → pays S × $1 = T / (total/100) dollars.
+    */
+    let sizeRows = '';
+    if (betSize > 0 && total > 0) {
+      const shares  = betSize / (total / 100);
+      const payout  = shares;
+      const profit  = payout - betSize;
+
+      sizeRows = `<div class="bracket-sizing">
+          <div class="bs-header">
+            <div class="bs-col-label">Bracket</div>
+            <div class="bs-col-label" style="text-align:center">Price</div>
+            <div class="bs-col-label" style="text-align:center">Buy $</div>
+            <div class="bs-col-label" style="text-align:right">Shares</div>
+          </div>` +
+          o.bracketBuckets.map(b => {
+            const bucketDollars = shares * (b.price/100);
+            const isExact = b.isExact;
+            return `<div class="bs-row ${isExact?'bs-exact':''}">
+              <div class="bs-name">${isExact?'→ ':''}${(()=>{const m=b.question.match(/(\d+[\d°–\-–]+(?:°[CF])?(?:F|C)?[\d°–\-]*(?:\d+)?)/);return m?m[0]:b.question.replace(/Will the highest temperature in \w+( \w+)* be /i,'').slice(0,18);})()} </div>
+              <div class="bs-val" style="text-align:center;color:var(--amber)">${b.price}¢</div>
+              <div class="bs-val" style="text-align:center;color:var(--green)">$${bucketDollars.toFixed(2)}</div>
+              <div class="bs-val" style="text-align:right">${shares.toFixed(1)}</div>
+            </div>`;
+          }).join('') +
+          `<div class="bs-total">
+            <div class="bs-total-label">Total spent</div>
+            <div class="bs-total-val">$${betSize.toFixed(2)}</div>
+            <div class="bs-total-payout">→ Payout if any resolves: <strong style="color:var(--green)">$${payout.toFixed(2)}</strong> (${profit>=0?'+':''}$${profit.toFixed(2)} profit)</div>
+          </div>
+          <div style="padding:4px 12px 8px;font-size:10px;color:var(--text3)">Flat $${betSize} bet · ${shares.toFixed(1)} shares each bracket</div>
+        </div>`;
+        sizeHtml = sizeRows;
+    }
+
+    bracketHtml = `<div class="bracket-buckets">` +
+      o.bracketBuckets.map(b => {
+        const burl     = b.slug ? `https://polymarket.com/event/${b.slug}` : url;
+        const isExact  = b.isExact;
+        const rowStyle = isExact ? 'background:var(--green-bg);border:0.5px solid var(--green-border);' : '';
+        const priceColor = isExact ? 'color:var(--green)' : '';
+        return `<div class="bucket-row" style="${rowStyle}">
+          <div class="bucket-name">${isExact ? '→ ' : ''}${b.question.replace(/Will the highest temperature in [\w\s]+ be (between )?/i,'').replace(/ degrees?( Fahrenheit| Celsius)?/i,'°').slice(0,40)}</div>
+          <div class="bucket-price" style="${priceColor}">${b.price}¢</div>
+          <a class="bucket-link" href="${burl}" target="_blank">↗</a>
+        </div>`;
+      }).join('') +
+      `</div>
+      <div class="bracket-total">
+        <div class="bt-label">Combined ask price</div>
+        <div class="bt-val ${totalCls}">${total}¢ ${total<100?'→ guaranteed ✓':total<110?'→ +EV':'→ −EV'}</div>
+      </div>
+      <div style="padding:3px 12px 6px;font-size:9px;color:var(--text3)">Prices include 0.5¢ spread buffer — actual cost may vary slightly</div>`;
+  }
+
+  /* Day badge */
+  const day = getSignalDay(o);
+  const dayLabel   = ['Today','+1 day','+2 days','+3 days'][day] || '';
+  const dayColor   = ['var(--green)','var(--amber)','var(--sky)','var(--text2)'][day] || 'var(--text2)';
+  const errLabel   = o.errorMargin || '';
+
+  /* Model accuracy strip — pulled from cityData for this city */
+  let accHtml = '';
+  {
+    const cd  = cityData[o.city];
+    const acc = cd?.forecast?.['_modelAccuracy'];
+    const isF = acc?.unit === '°F';
+    /* Show for US always. Show for international when data is real:
+       mae > 0.1 (not a zero-error artifact) OR bias is meaningful (most important to show).
+       Old guard 'within1 < 99' was hiding valid data for well-modelled cities. */
+    const dataLooksReal = acc && (isF || acc.mae > 0.1 || acc.biasMeaningful);
+    if (dataLooksReal) {
+      const maeColor  = acc.mae < (isF?2:1) ? 'var(--green)' : acc.mae < (isF?4:2) ? 'var(--amber)' : 'var(--red)';
+      const absBias   = Math.abs(acc.bias);
+      /* Always show exact bias — even small biases matter for bucket targeting */
+      const biasColor = absBias < (isF?0.5:0.3) ? 'var(--text3)'
+                      : absBias < (isF?1:0.5)   ? 'var(--green)'
+                      : absBias < (isF?3:1.5)   ? 'var(--amber)' : 'var(--red)';
+      const biasStr   = absBias < (isF?0.5:0.3)
+        ? `${acc.bias > 0 ? '+' : ''}${acc.bias}${isF?'°F':'°C'} (small)`
+        : acc.bias > 0 ? `+${acc.bias}${isF?'°F':'°C'} warm`
+        : `${acc.bias}${isF?'°F':'°C'} cold`;
+      const w1Label   = isF ? 'Within 2°F' : 'Within 1°C';
+      const w1Color   = acc.within1 >= 70 ? 'var(--green)' : acc.within1 >= 50 ? 'var(--amber)' : 'var(--red)';
+      const srcLabel  = acc.source ? acc.source : (isF ? 'ERA5 reanalysis' : 'ERA5 archive');
+      const biasNote  = absBias >= (isF?0.5:0.3) ? 'Bias correction applied' : 'No correction (bias too small)';
+      accHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);background:var(--bg3)">
+        <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
+          <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">Avg error</div>
+          <div style="font-size:12px;font-weight:700;color:${maeColor};font-family:var(--mono)">±${acc.mae}${isF?'°F':'°C'}</div>
+        </div>
+        <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
+          <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">Bias</div>
+          <div style="font-size:11px;font-weight:600;color:${biasColor};font-family:var(--mono)">${biasStr}</div>
+        </div>
+        <div style="padding:6px 10px;border-right:0.5px solid var(--border)">
+          <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">${w1Label}</div>
+          <div style="font-size:12px;font-weight:700;color:${w1Color};font-family:var(--mono)">${acc.within1}%</div>
+        </div>
+        <div style="padding:6px 10px">
+          <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">Days</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text2);font-family:var(--mono)">${acc.days}</div>
+        </div>
+      </div>
+      <div style="padding:2px 10px 5px;font-size:9px;color:var(--text3)">Ground truth: ${srcLabel} · ${acc.days}-day window · ${biasNote}</div>`;
+    }  /* end if(dataLooksReal) */
+  }  /* end accuracy block scope */
+
+  /* ── Confidence pill ─────────────────────────────────────────
+     Score 0–100 combining: signal type, forecast day, model accuracy, model agreement */
+  const cd_conf  = cityData[o.city];
+  const acc_conf = cd_conf?.forecast?.['_modelAccuracy'];
+  const dis_conf = cd_conf?.forecast?.['_modelDisagreement'];
+  let confScore = 50;
+  if (o.isArb)                      confScore += 40;
+  else if (o.isBracket && !o.isArb) confScore += 10;
+  else                               confScore -= 10;
+  confScore += [15, 8, 0, -10][Math.min(day, 3)];
+
+  /* EV penalty — negative or near-zero EV should tank confidence */
+  const confEvPct = getSignalEv(o);
+  if      (o.isArb)       { /* ARBs ignore EV penalty — they're guaranteed */ }
+  else if (confEvPct >= 20)   confScore += 15;
+  else if (confEvPct >= 10)   confScore +=  5;
+  else if (confEvPct >= 5)    confScore -=  5;
+  else if (confEvPct >= 0)    confScore -= 15;
+  else                    confScore -= 35; /* negative EV = strongly penalize */
+  if (acc_conf && !acc_conf.isFallback) {
+    const isF = acc_conf.unit === '°F';
+    const mae = acc_conf.mae;
+    if      (mae < (isF?2:1))  confScore += 15;
+    else if (mae < (isF?4:2))  confScore +=  5;
+    else                        confScore -= 10;
+    if      (acc_conf.within1 >= 70) confScore += 10;
+    else if (acc_conf.within1 <  50) confScore -= 10;
+    if (Math.abs(acc_conf.bias) > (isF?2:1)) confScore -= 5;
+  }
+  if (dis_conf != null) {
+    if      (dis_conf < 1) confScore += 10;
+    else if (dis_conf > 2) confScore -= 15;
+  }
+  confScore = Math.max(0, Math.min(100, confScore));
+
+  /* Hard cap: non-ARB signals with ≤ 0% EV can never be High confidence */
+  if (!o.isArb && evPct <= 0) confScore = Math.min(confScore, 44);
+
+  const confLabel = confScore >= 70 ? 'High' : confScore >= 45 ? 'Medium' : 'Low';
+  const confColor = confScore >= 70 ? 'var(--green)' : confScore >= 45 ? 'var(--amber)' : 'var(--red)';
+  const confBg    = confScore >= 70 ? '#00ff8815' : confScore >= 45 ? 'var(--amber-bg)' : '#ff444420';
+  const confDot   = confScore >= 70 ? '🟢' : confScore >= 45 ? '🟡' : '🔴';
+  const confPill  = `<div style="font-size:9px;font-weight:700;color:${confColor};padding:1px 6px;background:${confBg};border-radius:3px;border:0.5px solid ${confColor}40">${confDot} ${confLabel}</div>`;
+
+  /* Thin liquidity — no longer shown as a banner, data still available for confidence score */
+  const minBracketPrice = o.bracketBuckets ? Math.min(...o.bracketBuckets.map(b => b.price)) : 99;
+
+  /* For core-3 cards, footer EV reflects the current shifted window */
+  let footerEdgeLabel = o.edgeLabel;
+  let footerEdgePos   = o.edgePos;
+  if (o.isCore3 && o.allBuckets?.length && o.exactIdx != null) {
+    try {
+      const shift   = bracketShifts[oppIdx] || 0;
+      const exact   = o.exactIdx;
+      const abs     = o.allBuckets;
+      const lo      = Math.max(0, exact - 1 + shift);
+      const hi      = Math.min(abs.length - 1, exact + 1 + shift);
+      const win     = abs.slice(lo, hi + 1);
+      const total   = win.reduce((s,b) => s + (b.yesP || 0), 0) * 100;
+      if (total > 0) {
+        const ev      = Math.round(((100 / total) - 1) * 100);
+        const isArb   = total < 99.9;
+        footerEdgeLabel = isArb ? `+${Math.abs(ev)}% GUARANTEED` : `${ev > 0 ? '+' : ''}${ev}% EV`;
+        footerEdgePos   = ev > 0 || isArb;
+      }
+    } catch(e) { /* keep original */ }
+  }
+
+  return `<div class="ocard ${o.edgeClass}" data-opp-idx="${oppIdx ?? ''}">
+    <div class="oc-head">
+      <div class="oc-top">
+        <div>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">
+            <div class="oc-city">${o.city}</div>
+            <div style="font-size:9px;font-weight:600;color:${dayColor};padding:1px 5px;background:${dayColor}18;border-radius:3px">${dayLabel}</div>
+            ${errLabel ? `<div style="font-size:9px;color:var(--amber);padding:1px 5px;background:var(--amber-bg);border-radius:3px">${errLabel}</div>` : ''}
+            ${confPill}
+            ${(() => {
+              const bw = getBetWindow(o.city, o.date);
+              if (!bw) return '';
+              const col = bw.late ? 'var(--text3)'
+                : bw.early ? 'var(--text3)'
+                : bw.urgent ? 'var(--amber)'
+                : 'var(--green)';
+              const bg  = bw.late || bw.early ? 'var(--bg3)'
+                : bw.urgent ? 'var(--amber-bg)'
+                : 'var(--green-bg)';
+              const icon = bw.late ? '🔒' : bw.early ? '🌙' : bw.urgent ? '⏰' : '🕐';
+              return `<div style="font-size:9px;font-weight:600;color:${col};padding:1px 6px;background:${bg};border-radius:3px;border:0.5px solid ${col}40">${icon} ${bw.label}</div>`;
+            })()}
+          </div>
+          <div class="oc-market">${o.market}</div>
+        </div>
+        <div class="oc-badge ${o.badgeClass}">${o.badgeLabel}</div>
+      </div>
+    </div>
+    <div class="oc-compare">
+      <div class="oc-side fc">
+        <div class="oc-lbl">Forecast</div>
+        <div class="oc-val">${o.forecastVal}</div>
+        ${o.forecastRaw ? `<div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--mono)">${o.forecastRaw}</div>` : ''}
+        ${(() => { try {
+          const cd = cityData[o.city];
+          const lf = cd?.forecast?.['_localForecast'];
+          const dis = cd?.forecast?.['_modelDisagreement'];
+          if (!lf) return '';
+          const isNWS = lf.model === 'nws';
+          const localVal = lf.temps[o.date];
+          if (localVal == null) return '';
+          const displayVal = isNWS
+            ? `${localVal}°F (${Math.round((localVal-32)*5/9)}°C)`
+            : `${localVal}°C`;
+          const modelLabel = {
+            'nws':                 'NWS',
+            'noaa_intl':           'NOAA obs.',
+            'jma_seamless':        'JMA',
+            'uk_met_office_um':    'Met Office',
+            'meteofrance_seamless':'Météo-France',
+            'icon_seamless':       'DWD ICON',
+            'bom_access_global':   'BOM',
+            'kma_seamless':        'KMA',
+            'cma_grapes_global':   'CMA',
+          }[lf.model] || lf.model;
+          const disColor = dis == null ? 'var(--text3)'
+            : dis < 1 ? 'var(--green)' : dis < 2 ? 'var(--amber)' : 'var(--red)';
+          const disLabel = dis != null ? ` · Δ${dis}${isNWS?'°F':'°C'}` : '';
+          return `<div style="font-size:10px;margin-top:3px;padding:3px 6px;background:var(--bg3);border-radius:4px;border:0.5px solid var(--border);display:inline-flex;gap:6px;align-items:center">
+            <span style="color:var(--text3);font-size:9px">${modelLabel}</span>
+            <span style="font-weight:600;color:var(--sky);font-family:var(--mono)">${displayVal}</span>
+            <span style="color:${disColor};font-size:9px">${disLabel}</span>
+          </div>`;
+        } catch(e){ return ''; } })()}
+        <div class="oc-sub">${o.forecastDesc}</div>
+      </div>
+      ${o.isBracket ? '' : `<div class="oc-side mk"><div class="oc-lbl">Market price</div><div class="oc-val">${o.marketVal}</div><div class="oc-sub">${o.marketDesc}</div></div>`}
+    </div>
+    ${accHtml}
+    ${(() => {
+      if (o.isCore3 && o.allBuckets) {
+        const shifted = buildShiftedBracketHtml(o, oppIdx);
+        if (shifted) return shifted; /* replaces both bracketHtml AND sizeHtml */
+      }
+      return bracketHtml + sizeHtml;
+    })()}
+    <div class="oc-footer">
+      <div class="oc-edge ${footerEdgePos?'pos':'neg'}">${footerEdgeLabel}</div>
+      <div class="oc-reason">${(() => {
+        if (o.isCore3 && o.allBuckets?.length && o.exactIdx != null) {
+          try {
+            const shift  = bracketShifts[oppIdx] || 0;
+            const abs    = o.allBuckets;
+            const exact  = o.exactIdx;
+            const lo     = Math.max(0, exact - 1 + shift);
+            const hi     = Math.min(abs.length - 1, exact + 1 + shift);
+            const win    = abs.slice(lo, hi + 1);
+            const total  = Math.round(win.reduce((s,b) => s + (b.yesP||0), 0) * 100);
+            const isArb  = total < 100;
+            const ev     = Math.round(((100/total)-1)*100);
+            const shiftNote = shift === 0 ? '' : ` (${shift > 0 ? '+' : ''}${shift} from forecast)`;
+            if (isArb) return `Buy all ${win.length} adjacent buckets for ${total}¢${shiftNote}. One MUST resolve YES → guaranteed +${100-total}¢ profit per share.`;
+            return `${win.length} adjacent buckets cost ${total}¢${shiftNote}. EV: ${ev > 0 ? '+' : ''}${ev}% if forecast is within 1 bucket.`;
+          } catch(e) { /* fall through */ }
+        }
+        return o.reason;
+      })()}</div>
+      <a class="oc-link" href="${(() => { try { return getWundergroundUrl(o.city, o.date); } catch(e) { return 'https://www.wunderground.com/'; } })()}" target="_blank">Wunderground ↗</a>
+    </div>
+  </div>`;
+}
+
+function renderWeather() {
+  if (!wxOpps.length) {
+    document.getElementById('opp-list').innerHTML =
+      '<div class="empty"><div class="empty-icon">✅</div><p>No significant gaps found.<br>Markets are well-priced vs forecasts,<br>or no matching markets yet.</p></div>';
+    document.getElementById('wt-showing').textContent = '0';
+    return;
+  }
+  applyWxFilters();
+}
+
+/* ============================================================
+   RENDER — CITY FORECASTS
+   ============================================================ */
+function renderCities() {
+  const el = document.getElementById('city-list');
+  const entries = Object.values(cityData);
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🌍</div><p>Run the weather scan to load forecasts.</p></div>';
+    return;
+  }
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = new Date().toISOString().slice(0,10);
+
+  el.innerHTML = entries.map(({city, forecast, forecastType}) => {
+    /* forecast is either:
+       NWS format:      { 'YYYY-MM-DD': tempF }
+       Open-Meteo format: { 'YYYY-MM-DD': { tempC, rainPct } } */
+    const isUS    = city.country === 'US';
+    const dates   = Object.keys(forecast).sort().slice(0,7);
+
+    /* Today's values */
+    const todayRaw = forecast[today];
+    let todayTempF = null, todayTempC = null, todayRain = '—';
+    if (isUS) {
+      todayTempF = typeof todayRaw === 'number' ? todayRaw : null;
+      todayTempC = todayTempF != null ? Math.round((todayTempF-32)*5/9) : null;
+    } else {
+      todayTempC = todayRaw?.tempC != null ? Math.round(todayRaw.tempC) : null;
+      todayTempF = todayTempC != null ? Math.round(todayTempC*9/5+32) : null;
+      todayRain  = todayRaw?.rainPct != null ? todayRaw.rainPct + '%' : '—';
+    }
+
+    const tempDisplay = todayTempC != null
+      ? todayTempC + '°C / ' + todayTempF + '°F'
+      : '—';
+
+    /* 5-day strip — show spread if available */
+    const fcDays = dates.filter(ds => ds >= today).slice(0,5).map((ds, i) => {
+      const d   = new Date(ds + 'T12:00:00');
+      const lbl = i === 0 ? 'Today' : DAYS[d.getDay()];
+      const raw = forecast[ds];
+      let tC = null, rain = '', spread = null;
+      if (isUS) {
+        tC = typeof raw === 'number' ? Math.round((raw-32)*5/9) : null;
+      } else {
+        tC     = raw?.tempC   != null ? Math.round(raw.tempC)   : null;
+        rain   = raw?.rainPct != null ? raw.rainPct + '%'        : '';
+        spread = raw?.spreadC != null ? '±' + Math.round(raw.spreadC/2*10)/10 + '°' : null;
+      }
+      const ico = tC == null ? '—' : tC > 28 ? '☀️' : tC > 15 ? '⛅' : tC > 5 ? '🌥️' : '❄️';
+      return '<div class="fc-day">' +
+        '<div class="fc-lbl">' + lbl + '</div>' +
+        '<div class="fc-ico">' + ico + '</div>' +
+        '<div class="fc-hi">' + (tC != null ? tC + '°' : '—') + '</div>' +
+        '<div class="fc-lo" style="color:' + (spread ? 'var(--amber)' : 'var(--sky)') + '">' +
+          (spread || rain || '—') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    return '<div class="city-card">' +
+      '<div class="cc-top">' +
+        '<div>' +
+          '<div class="cc-name">' + city.name + '</div>' +
+          '<div class="cc-country">' + city.country + ' · ' + city.station + ' · ' + (forecastType||'') + '</div>' +
+        '</div>' +
+        '<div class="cc-right">' +
+          '<div class="cc-emoji">' + (todayTempC == null ? '—' : todayTempC > 28 ? '☀️' : todayTempC > 15 ? '⛅' : todayTempC > 5 ? '🌥️' : '❄️') + '</div>' +
+          '<div class="cc-temp">' + (todayTempC != null ? todayTempC + '°' : '—') + '</div>' +
+          '<div class="cc-feels">' + tempDisplay + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="cc-metrics">' +
+        '<div><div class="ccm-l">Station</div><div class="ccm-v">' + (city.station||'—') + '</div></div>' +
+        '<div><div class="ccm-l">' + (isUS ? 'Rain today' : 'Ensemble spread') + '</div><div class="ccm-v" style="color:' + (isUS ? 'var(--rain)' : 'var(--amber)') + '">' + (() => {
+          if (isUS) return todayRain;
+          const sp = forecast[today]?.spreadC;
+          return sp != null ? '±' + Math.round(sp/2*10)/10 + '°C' : '—';
+        })() + '</div></div>' +
+        '<div><div class="ccm-l">' + (isUS ? 'Source' : 'Model bias') + '</div><div class="ccm-v" style="color:var(--amber)">' + (() => {
+          if (isUS) return forecastType || '—';
+          const b = forecast['_yesterdayActualC'] != null && forecast[new Date(new Date().setDate(new Date().getDate()-1)).toISOString().slice(0,10)]?.tempC != null
+            ? Math.round((forecast[new Date(new Date().setDate(new Date().getDate()-1)).toISOString().slice(0,10)].tempC - forecast['_yesterdayActualC']) * 10) / 10
+            : null;
+          return b != null ? (b > 0 ? '+' : '') + b + '°C yest.' : (forecastType||'—');
+        })() + '</div></div>' +
+      '</div>' +
+      /* Model accuracy block — all cities */
+      (() => {
+        const acc = forecast['_modelAccuracy'];
+        if (!acc) return '';
+        const isF       = acc.unit === '°F';
+        const unit      = isF ? '°F' : '°C';
+        const biasColor = Math.abs(acc.bias) < (isF?1:0.5) ? 'var(--green)'
+                        : Math.abs(acc.bias) < (isF?3:1.5) ? 'var(--amber)' : 'var(--red)';
+        const maeColor  = acc.mae < (isF?2:1) ? 'var(--green)'
+                        : acc.mae < (isF?4:2) ? 'var(--amber)' : 'var(--red)';
+        const biasLabel = Math.abs(acc.bias) < (isF?0.5:0.3) ? 'No bias'
+                        : acc.bias > 0 ? `+${acc.bias}${unit} (warm)` : `${acc.bias}${unit} (cold)`;
+        const w1Label   = isF ? 'Within 2°F' : 'Within 1°C';
+        const w2Label   = isF ? 'Within 4°F' : 'Within 2°C';
+        const srcLabel  = isF ? 'NWS' : 'ECMWF';
+
+        const recentRows = acc.recent.map(r => {
+          const errColor = Math.abs(r.error) < (isF?2:1) ? 'var(--green)'
+                         : Math.abs(r.error) < (isF?4:2) ? 'var(--amber)' : 'var(--red)';
+          const errSign  = r.error > 0 ? '+' : '';
+          const shortDate = r.date.slice(5);
+          return `<div style="display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:4px;padding:4px 0;border-top:0.5px solid var(--border)">
+            <div style="font-size:10px;color:var(--text3)">${shortDate}</div>
+            <div style="font-size:10px;color:var(--text2)">Actual: <span style="color:var(--text);font-weight:600">${r.actual}${unit}</span></div>
+            <div style="font-size:10px;color:var(--text2)">Fcst: <span style="color:var(--sun);font-weight:600">${r.forecast}${unit}</span></div>
+            <div style="font-size:10px;font-weight:600;color:${errColor};text-align:right">${errSign}${r.error}${unit}</div>
+          </div>`;
+        }).join('');
+
+        return `<div style="margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:6px;border:0.5px solid var(--border)">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">${srcLabel} accuracy — last ${acc.days} days</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px">
+            <div><div style="font-size:9px;color:var(--text3)">Avg error</div><div style="font-size:13px;font-weight:700;color:${maeColor};font-family:var(--mono)">±${acc.mae}${unit}</div></div>
+            <div><div style="font-size:9px;color:var(--text3)">Bias</div><div style="font-size:11px;font-weight:600;color:${biasColor};font-family:var(--mono)">${biasLabel}</div></div>
+            <div><div style="font-size:9px;color:var(--text3)">${w1Label}</div><div style="font-size:13px;font-weight:700;color:${acc.within1>=70?'var(--green)':acc.within1>=50?'var(--amber)':'var(--red)'};font-family:var(--mono)">${acc.within1}%</div></div>
+            <div><div style="font-size:9px;color:var(--text3)">${w2Label}</div><div style="font-size:13px;font-weight:700;color:var(--sky);font-family:var(--mono)">${acc.within2||'—'}%</div></div>
+          </div>
+          <div style="font-size:9px;color:var(--text3);margin-bottom:4px">Recent days (forecast vs actual)</div>
+          ${recentRows}
+        </div>`;
+      })() +
+      '<div class="cc-fc">' + fcDays + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============================================================
+   CITY CHIPS
+   ============================================================ */
+function buildChips() {
+  document.getElementById('city-chips').innerHTML=WX_CITIES.map((c,i)=>`
+    <div class="chip ${c.on?'on':''}" onclick="toggleCity(${i},this)">${c.name}</div>
+  `).join('');
+}
+function toggleCity(i,el){WX_CITIES[i].on=!WX_CITIES[i].on;el.classList.toggle('on',WX_CITIES[i].on);}
+function selectAllCities(on){WX_CITIES.forEach(c=>c.on=on);buildChips();}
+
+/* ============================================================
+   TELEGRAM
+   ============================================================ */
+async function sendTg(msg) {
+  if(!tgToken||!tgChat) return;
+  try{await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:tgChat,text:msg})});}catch{}
+}
+function saveTg(){
+  tgToken=document.getElementById('tg-token').value.trim();
+  tgChat=document.getElementById('tg-chat').value.trim();
+  localStorage.setItem('pms_tg_token',tgToken);
+  localStorage.setItem('pms_tg_chat',tgChat);
+  toast('Saved');
+}
+function saveAlertPrefs(){
+  alertArb    = document.getElementById('tog-arb').classList.contains('on');
+  alertHiConf = document.getElementById('tog-wx-alert').classList.contains('on');
+  localStorage.setItem('pms_alert_arb', alertArb ? '1' : '0');
+  localStorage.setItem('pms_alert_hiconf', alertHiConf ? '1' : '0');
+}
+
+/* Fire Telegram alerts for new matching signals. Each signal is keyed by
+   city+date+badge so we only alert once per unique opportunity. */
+async function maybeFireAlerts() {
+  if (!tgToken || !tgChat) return;
+  if (!alertArb && !alertHiConf) return;
+  const fresh = [];
+  for (const o of wxOpps) {
+    const key = `${o.city}|${o.date}|${o.badgeLabel}`;
+    if (alertedKeys.has(key)) continue;
+    const isHiConf = getSignalConfLevel(o) === 'high';
+    const wantArb    = alertArb && o.isArb;
+    const wantHiConf = alertHiConf && isHiConf && !o.isArb;
+    if (wantArb || wantHiConf) { fresh.push(o); alertedKeys.add(key); }
+  }
+  if (!fresh.length) return;
+  /* Cap stored keys so localStorage doesn't grow unbounded */
+  const keysArr = [...alertedKeys].slice(-500);
+  alertedKeys = new Set(keysArr);
+  localStorage.setItem('pms_alerted', JSON.stringify(keysArr));
+  /* Batch into one message (max 8 lines to keep it readable) */
+  const lines = fresh.slice(0, 8).map(o =>
+    `${o.isArb ? '⚡' : '🟢'} ${o.city} ${o.date} · ${o.edgeLabel}\n   ${o.market}`
+  );
+  const more = fresh.length > 8 ? `\n…and ${fresh.length - 8} more` : '';
+  await sendTg(`PM Scanner — ${fresh.length} new signal${fresh.length>1?'s':''}\n\n${lines.join('\n')}${more}`);
+}
+
+function toggleAuto(el){
+  el.classList.toggle('on');
+  if(el.classList.contains('on')){autoTimer=setInterval(runAll,5*60*1000);toast('Auto-scan on — every 5 min');}
+  else{clearInterval(autoTimer);autoTimer=null;toast('Auto-scan off');}
+}
+
+/* ============================================================
+   PWA INSTALL
+   ============================================================ */
+let dp=null;
+if(!window.matchMedia('(display-mode: standalone)').matches&&!navigator.standalone&&!localStorage.getItem('pms_dismissed')){
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('ibanner').classList.add('show');});
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)) document.getElementById('ibanner').classList.add('show');
+}
+document.getElementById('ib-yes').onclick=async()=>{
+  if(dp){dp.prompt();await dp.userChoice;dp=null;document.getElementById('ibanner').classList.remove('show');}
+  else{document.getElementById('ibanner').innerHTML='<div style="font-size:11px;color:var(--text2);width:100%;line-height:1.7"><strong style="color:var(--text)">iPhone:</strong> Tap <strong style="color:var(--green)">Share ↑</strong> in Safari → <strong style="color:var(--green)">Add to Home Screen</strong> → Add <button onclick="document.getElementById(\'ibanner\').classList.remove(\'show\');localStorage.setItem(\'pms_dismissed\',1)" style="margin-left:8px;font-size:10px;padding:3px 8px;border-radius:5px;border:0.5px solid var(--border2);background:none;color:var(--text3);cursor:pointer">Got it</button></div>';}
+};
+document.getElementById('ib-no').onclick=()=>{document.getElementById('ibanner').classList.remove('show');localStorage.setItem('pms_dismissed',1);};
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+/* ============================================================
+   PORTFOLIO OPTIMIZER
+   Finds combinations of weather bets that:
+   - Maximise total expected profit
+   - Minimise correlation (bets in different cities/dates)
+   - Fit within bet size constraints
+   Uses a greedy selection algorithm with correlation penalties
+   ============================================================ */
+
+document.getElementById('bet-size').value = betSize;
+document.getElementById('tg-token').value=tgToken;
+document.getElementById('tg-chat').value=tgChat;
+/* Restore alert toggle visual state */
+if (alertArb)    document.getElementById('tog-arb').classList.add('on');
+if (alertHiConf) document.getElementById('tog-wx-alert').classList.add('on');
+buildChips();
+/* Rehydrate last scan if recent, and keep the "x min ago" label fresh */
+restoreScan();
+updateFreshness();
+setInterval(updateFreshness, 60000);
+</script>
+</body>
+</html>
