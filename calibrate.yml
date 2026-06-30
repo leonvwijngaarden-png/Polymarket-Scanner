@@ -1,0 +1,35 @@
+name: PM Scanner — Monthly Peak Hour Calibration
+
+on:
+  schedule:
+    # Runs once a month (1st of the month, 03:00 UTC) to refresh
+    # peak-hours.json with real measured data, since peak temp hour
+    # drifts slightly with the seasons (sun angle, day length).
+    - cron: '0 3 1 * *'
+  workflow_dispatch: {}   # allows manual trigger from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run calibration
+        run: node calibrate-peak-hours.js
+
+      - name: Commit updated peak hours
+        run: |
+          git config user.name "pm-scanner-bot"
+          git config user.email "actions@github.com"
+          git add peak-hours.json
+          git diff --staged --quiet || git commit -m "Refresh calibrated peak hours [skip ci]"
+          git push
