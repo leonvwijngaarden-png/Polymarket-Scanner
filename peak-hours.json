@@ -1,0 +1,544 @@
+{
+  "generatedAt": "2026-06-30T16:44:34.581Z",
+  "cities": {
+    "New York": {
+      "highH": 15,
+      "utc": -4,
+      "samples": [
+        14,
+        14,
+        16,
+        16,
+        16
+      ]
+    },
+    "Chicago": {
+      "highH": 15,
+      "utc": -5,
+      "samples": [
+        15,
+        15,
+        14,
+        16,
+        15
+      ]
+    },
+    "Miami": {
+      "highH": 14,
+      "utc": -4,
+      "samples": [
+        15,
+        13,
+        12,
+        15,
+        14
+      ]
+    },
+    "Dallas": {
+      "highH": 17,
+      "utc": -5,
+      "samples": [
+        16,
+        17,
+        17,
+        18,
+        16
+      ]
+    },
+    "Seattle": {
+      "highH": 17,
+      "utc": -7,
+      "samples": [
+        18,
+        16,
+        15,
+        18,
+        16
+      ]
+    },
+    "Atlanta": {
+      "highH": 16,
+      "utc": -4,
+      "samples": [
+        17,
+        17,
+        17,
+        16,
+        13
+      ]
+    },
+    "Los Angeles": {
+      "highH": 13,
+      "utc": -7,
+      "samples": [
+        13,
+        14,
+        14,
+        13,
+        12
+      ]
+    },
+    "Houston": {
+      "highH": 14,
+      "utc": -5,
+      "samples": [
+        14,
+        14,
+        14,
+        15,
+        15
+      ]
+    },
+    "Denver": {
+      "highH": 16,
+      "utc": -6,
+      "samples": [
+        15,
+        16,
+        15,
+        16,
+        16
+      ]
+    },
+    "San Francisco": {
+      "highH": 14,
+      "utc": -7,
+      "samples": [
+        14,
+        15,
+        13,
+        14,
+        14
+      ]
+    },
+    "Austin": {
+      "highH": 16,
+      "utc": -5,
+      "samples": [
+        16,
+        17,
+        16,
+        14,
+        16
+      ]
+    },
+    "London": {
+      "highH": 18,
+      "utc": 1,
+      "samples": [
+        17,
+        18,
+        17,
+        19,
+        17
+      ]
+    },
+    "Paris": {
+      "highH": 17,
+      "utc": 2,
+      "samples": [
+        16,
+        17,
+        18,
+        17,
+        17
+      ]
+    },
+    "Amsterdam": {
+      "highH": 14,
+      "utc": 2,
+      "samples": [
+        19,
+        15,
+        9,
+        13,
+        13
+      ]
+    },
+    "Madrid": {
+      "highH": 17,
+      "utc": 2,
+      "samples": [
+        18,
+        16,
+        17,
+        18,
+        17
+      ]
+    },
+    "Milan": {
+      "highH": 17,
+      "utc": 2,
+      "samples": [
+        16,
+        17,
+        17,
+        17,
+        17
+      ]
+    },
+    "Munich": {
+      "highH": 13,
+      "utc": 2,
+      "samples": [
+        17,
+        0,
+        16,
+        15,
+        15
+      ]
+    },
+    "Helsinki": {
+      "highH": 12,
+      "utc": 3,
+      "samples": [
+        17,
+        15,
+        0,
+        18,
+        12
+      ]
+    },
+    "Warsaw": {
+      "highH": 16,
+      "utc": 2,
+      "samples": [
+        16,
+        15,
+        16,
+        14,
+        17
+      ]
+    },
+    "Istanbul": {
+      "highH": 14,
+      "utc": 3,
+      "samples": [
+        15,
+        14,
+        14,
+        14,
+        11
+      ]
+    },
+    "Ankara": {
+      "highH": 16,
+      "utc": 3,
+      "samples": [
+        16,
+        16,
+        16,
+        15,
+        16
+      ]
+    },
+    "Moscow": {
+      "highH": 15,
+      "utc": 3,
+      "samples": [
+        15,
+        15,
+        16,
+        16,
+        15
+      ]
+    },
+    "Tokyo": {
+      "highH": 13,
+      "utc": 9,
+      "samples": [
+        13,
+        11,
+        16,
+        13,
+        12
+      ]
+    },
+    "Hong Kong": {
+      "highH": 13,
+      "utc": 8,
+      "samples": [
+        12,
+        12,
+        14,
+        11,
+        14
+      ]
+    },
+    "Seoul": {
+      "highH": 15,
+      "utc": 9,
+      "samples": [
+        14,
+        16,
+        16,
+        14,
+        13
+      ]
+    },
+    "Busan": {
+      "highH": 14,
+      "utc": 9,
+      "samples": [
+        18,
+        12,
+        12,
+        13,
+        14
+      ]
+    },
+    "Singapore": {
+      "highH": 15,
+      "utc": 8,
+      "samples": [
+        17,
+        13,
+        16,
+        14,
+        17
+      ]
+    },
+    "Shanghai": {
+      "highH": 12,
+      "utc": 8,
+      "samples": [
+        14,
+        9,
+        11,
+        11,
+        14
+      ]
+    },
+    "Beijing": {
+      "highH": 16,
+      "utc": 8,
+      "samples": [
+        16,
+        16,
+        17,
+        15,
+        15
+      ]
+    },
+    "Guangzhou": {
+      "highH": 14,
+      "utc": 8,
+      "samples": [
+        15,
+        14,
+        11,
+        14,
+        16
+      ]
+    },
+    "Shenzhen": {
+      "highH": 14,
+      "utc": 8,
+      "samples": [
+        15,
+        13,
+        13,
+        12,
+        16
+      ]
+    },
+    "Chengdu": {
+      "highH": 16,
+      "utc": 8,
+      "samples": [
+        15,
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    "Chongqing": {
+      "highH": 13,
+      "utc": 8,
+      "samples": [
+        15,
+        0,
+        16,
+        17,
+        16
+      ]
+    },
+    "Wuhan": {
+      "highH": 14,
+      "utc": 8,
+      "samples": [
+        15,
+        14,
+        13,
+        12,
+        16
+      ]
+    },
+    "Qingdao": {
+      "highH": 13,
+      "utc": 8,
+      "samples": [
+        14,
+        12,
+        12,
+        14,
+        12
+      ]
+    },
+    "Kuala Lumpur": {
+      "highH": 15,
+      "utc": 8,
+      "samples": [
+        14,
+        17,
+        15,
+        16,
+        11
+      ]
+    },
+    "Manila": {
+      "highH": 12,
+      "utc": 8,
+      "samples": [
+        10,
+        13,
+        12,
+        13,
+        14
+      ]
+    },
+    "Taipei": {
+      "highH": 12,
+      "utc": 8,
+      "samples": [
+        12,
+        13,
+        12,
+        11,
+        11
+      ]
+    },
+    "Lucknow": {
+      "highH": 13,
+      "utc": 5.5,
+      "samples": [
+        10,
+        11,
+        14,
+        14,
+        14
+      ]
+    },
+    "Karachi": {
+      "highH": 13,
+      "utc": 5,
+      "samples": [
+        13,
+        13,
+        13,
+        14,
+        13
+      ]
+    },
+    "Jeddah": {
+      "highH": 12,
+      "utc": 3,
+      "samples": [
+        11,
+        12,
+        13,
+        13,
+        13
+      ]
+    },
+    "Tel Aviv": {
+      "highH": 14,
+      "utc": 3,
+      "samples": [
+        14,
+        14,
+        13,
+        13,
+        14
+      ]
+    },
+    "Wellington": {
+      "highH": 15,
+      "utc": 12,
+      "samples": [
+        13,
+        19,
+        14,
+        15,
+        13
+      ]
+    },
+    "Cape Town": {
+      "highH": 14,
+      "utc": 2,
+      "samples": [
+        14,
+        13,
+        14,
+        13,
+        14
+      ]
+    },
+    "Toronto": {
+      "highH": 16,
+      "utc": -4,
+      "samples": [
+        16,
+        16,
+        16,
+        15,
+        16
+      ]
+    },
+    "Mexico City": {
+      "highH": 14,
+      "utc": -5,
+      "samples": [
+        15,
+        13,
+        15,
+        14,
+        12
+      ]
+    },
+    "Panama City": {
+      "highH": 13,
+      "utc": -5,
+      "samples": [
+        14,
+        11,
+        14,
+        12,
+        15
+      ]
+    },
+    "São Paulo": {
+      "highH": 13,
+      "utc": -3,
+      "samples": [
+        13,
+        13,
+        14,
+        12,
+        13
+      ]
+    },
+    "Buenos Aires": {
+      "highH": 15,
+      "utc": -3,
+      "samples": [
+        15,
+        15,
+        15,
+        15,
+        14
+      ]
+    }
+  }
+}
