@@ -2,6 +2,10 @@
   "keys": [
     "New York|2026-06-30|core3",
     "Houston|2026-06-30|core3",
-    "Mexico City|2026-06-30|core3"
+    "Mexico City|2026-06-30|core3",
+    "Beijing|2026-07-01|core3",
+    "Chengdu|2026-07-01|core3",
+    "Lucknow|2026-07-01|core3",
+    "Karachi|2026-07-01|core3"
   ]
 }
