@@ -1,0 +1,408 @@
+{
+  "generatedAt": "2026-07-01T14:45:48.107Z",
+  "daysBack": 60,
+  "apiUsed": "Open-Meteo Previous Runs API (genuine day-1 forecasts)",
+  "coordinatesUsed": "Exact ICAO station coordinates",
+  "summary": {
+    "totalResolved": 0,
+    "exactHits": 0,
+    "within1Hits": 0,
+    "exactPct": 0,
+    "within1Pct": 0,
+    "noForecastData": 0
+  },
+  "cities": [
+    {
+      "city": "New York",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Chicago",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Miami",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Dallas",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Seattle",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Atlanta",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Los Angeles",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Houston",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Denver",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "San Francisco",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Austin",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "London",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Paris",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Amsterdam",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Madrid",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Milan",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Munich",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Helsinki",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Warsaw",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Istanbul",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Ankara",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Moscow",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Tokyo",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Hong Kong",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Seoul",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Busan",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Singapore",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Shanghai",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Beijing",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Guangzhou",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Shenzhen",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Chengdu",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Chongqing",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Wuhan",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Qingdao",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Kuala Lumpur",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Manila",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Taipei",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Lucknow",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Karachi",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Jeddah",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Tel Aviv",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Wellington",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Cape Town",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Toronto",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Mexico City",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Panama City",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "São Paulo",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    },
+    {
+      "city": "Buenos Aires",
+      "days": 0,
+      "exactHits": 0,
+      "within1": 0,
+      "avgBucketsOff": 0,
+      "detail": []
+    }
+  ]
+}
