@@ -1,0 +1,30 @@
+name: PM Scanner — Run Backtest
+
+on:
+  workflow_dispatch: {}   # manual trigger only — click "Run workflow" in Actions tab
+
+permissions:
+  contents: write   # needed to commit backtest-results.json back to repo
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run backtest
+        run: node backtest.js
+
+      - name: Save results to repo
+        run: |
+          git config user.name "pm-scanner-bot"
+          git config user.email "actions@github.com"
+          git add backtest-results.json
+          git diff --staged --quiet || git commit -m "Backtest results [skip ci]"
+          git push
